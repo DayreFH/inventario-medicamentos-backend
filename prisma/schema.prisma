@@ -1,0 +1,252 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String    // Contraseña hasheada con bcrypt
+  name      String
+  role      UserRole  @default(user)
+  isActive  Boolean   @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
+model Supplier {
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String?
+  created_at DateTime @default(now())
+  receipts  Receipt[]
+  medicinePrices MedicinePrice[]
+}
+
+model Customer {
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  created_at DateTime @default(now())
+  sales     Sale[]
+}
+
+enum FormaFarmaceutica {
+  comprimidos
+  capsulas
+  jarabe
+  suspension
+  inyectables
+  unguentos
+  gel
+  pomadas
+  soluciones
+  ovulos
+  supositorios
+  otros
+}
+
+enum Concentracion {
+  mg
+  ml
+  ui
+  estandar
+}
+
+enum Presentacion {
+  blister
+  tubo
+  frasco
+  sobres
+  ampollas
+  otros
+}
+
+model Medicine {
+  id                    Int                @id @default(autoincrement())
+  codigo                String             @unique
+  nombreComercial       String
+  nombreGenerico        String
+  formaFarmaceutica     FormaFarmaceutica  @default(comprimidos)
+  concentracion         Concentracion      @default(mg)
+  presentacion          Presentacion       @default(blister)
+  fechaVencimiento      DateTime?
+  pesoKg                Decimal            @default(0) @db.Decimal(10, 3)
+  stock                 Int                @default(0)
+  created_at            DateTime           @default(now())
+  updated_at            DateTime           @updatedAt
+
+  // Relaciones
+  precios               MedicinePrice[]
+  parametros            MedicineParam[]
+  receiptItems          ReceiptItem[]
+  saleItems             SaleItem[]
+
+  @@index([nombreComercial])
+  @@index([fechaVencimiento])
+  @@index([stock])
+  @@map("medicines")
+}
+
+model MedicinePrice {
+  id                    Int                @id @default(autoincrement())
+  medicineId            Int
+  supplierId            Int?               // Proveedor asociado (opcional para mantener flexibilidad)
+  precioCompraUnitario  Decimal            @db.Decimal(10, 2)
+  margenUtilidad        Decimal            @db.Decimal(5, 2) // Porcentaje
+  precioVentaUnitario   Decimal            @db.Decimal(10, 2)
+  precioLimiteDescuento Decimal?           @db.Decimal(10, 2)
+  activo                Boolean            @default(true)
+  created_at            DateTime           @default(now())
+  updated_at            DateTime           @updatedAt
+
+  medicine              Medicine           @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  supplier              Supplier?          @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@map("medicine_prices")
+}
+
+model MedicineParam {
+  id                    Int                @id @default(autoincrement())
+  medicineId            Int
+  stockMinimo           Int                @default(10)
+  alertaCaducidad       Int                @default(30) // Días antes del vencimiento
+  tiempoSinMovimiento   Int                @default(90) // Días sin movimiento
+  created_at            DateTime           @default(now())
+  updated_at            DateTime           @updatedAt
+
+  medicine              Medicine           @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+
+  @@unique([medicineId])
+  @@map("medicine_params")
+}
+
+model Receipt {
+  id         Int       @id @default(autoincrement())
+  supplier   Supplier  @relation(fields: [supplierId], references: [id])
+  supplierId Int
+  date       DateTime
+  notes      String?
+  created_at DateTime  @default(now())
+  items      ReceiptItem[]
+
+  @@index([date])
+  @@index([supplierId, date])
+}
+
+model ReceiptItem {
+  id         Int      @id @default(autoincrement())
+  receiptId  Int
+  medicineId Int
+  qty        Int
+
+  // ⬇️ Campo nuevo en Prisma (camelCase) mapeado a la columna SQL `unit_cost`
+  unitCost   Decimal  @default(0) @db.Decimal(10, 2) @map("unit_cost")
+  weightKg   Decimal  @default(0) @db.Decimal(10, 3) @map("weight_kg")
+  lot        String?  @db.VarChar(100)
+  expirationDate DateTime?
+  receipt    Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  medicine   Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+}
+
+
+model Sale {
+  id         Int       @id @default(autoincrement())
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  customerId Int
+  date       DateTime
+  notes      String?
+  created_at DateTime  @default(now())
+  items      SaleItem[]
+
+  @@index([date])
+  @@index([customerId, date])
+}
+
+model SaleItem {
+  id         Int       @id @default(autoincrement())
+  sale       Sale      @relation(fields: [saleId], references: [id])
+  saleId     Int
+  medicine   Medicine  @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  medicineId Int
+  qty        Int
+}
+
+model ExchangeRate {
+  id          Int      @id @default(autoincrement())
+  fromCurrency String   // DOP, USD, etc.
+  toCurrency   String   // DOP, USD, etc.
+  // Tasa promedio o de referencia (por compatibilidad). Usaremos sellRate si existe
+  rate        Decimal  @db.Decimal(10, 4)
+  // Nuevos campos: compra (buy) y venta (sell) por 1 fromCurrency -> toCurrency
+  buyRate     Decimal? @db.Decimal(10, 4)
+  sellRate    Decimal? @db.Decimal(10, 4)
+  source      String   // "banco_central", "api_externa", "manual"
+  date        DateTime @default(now())
+  isActive    Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([fromCurrency, toCurrency, date], name: "unique_rate_per_day")
+  @@map("exchange_rates")
+}
+
+model ExchangeRateMN {
+  id          Int      @id @default(autoincrement())
+  buyRate     Decimal  @db.Decimal(10, 4)
+  sellRate    Decimal  @db.Decimal(10, 4)
+  source      String   @default("manual") // "manual", "banco_central", "api_externa"
+  date        DateTime @default(now())
+  isActive    Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("exchange_rates_mn")
+}
+
+model UtilityRate {
+  id                Int      @id @default(autoincrement())
+  utilityPercentage Decimal  @db.Decimal(5, 2) // Porcentaje de utilidad
+  source            String   @default("manual")
+  date              DateTime @default(now())
+  isActive          Boolean  @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@map("utility_rates")
+}
+
+model ShippingRate {
+  id                Int      @id @default(autoincrement())
+  domesticRate      Decimal  @db.Decimal(10, 2)
+  internationalRate Decimal  @db.Decimal(10, 2)
+  weight            Decimal  @db.Decimal(10, 3) // Peso en kg
+  description       String?  @db.Text
+  source            String   @default("manual")
+  date              DateTime @default(now())
+  isActive          Boolean  @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@map("shipping_rates")
+}
+
