@@ -21,6 +21,9 @@ const app = express();
 // CONFIGURACIÓN DE SEGURIDAD
 // ============================================================
 
+// Trust proxy - Necesario para Railway y otros servicios detrás de proxy
+app.set('trust proxy', true);
+
 // CORS configurado correctamente
 const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
