@@ -39,6 +39,8 @@ model Supplier {
   created_at DateTime @default(now())
   receipts  Receipt[]
   medicinePrices MedicinePrice[]
+
+  @@map("supplier")
 }
 
 model Customer {
@@ -48,6 +50,8 @@ model Customer {
   email     String?
   created_at DateTime @default(now())
   sales     Sale[]
+
+  @@map("customer")
 }
 
 enum FormaFarmaceutica {
@@ -151,6 +155,7 @@ model Receipt {
 
   @@index([date])
   @@index([supplierId, date])
+  @@map("receipt")
 }
 
 model ReceiptItem {
@@ -166,6 +171,8 @@ model ReceiptItem {
   expirationDate DateTime?
   receipt    Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   medicine   Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+
+  @@map("receiptitem")
 }
 
 
@@ -180,6 +187,7 @@ model Sale {
 
   @@index([date])
   @@index([customerId, date])
+  @@map("sale")
 }
 
 model SaleItem {
@@ -189,6 +197,8 @@ model SaleItem {
   medicine   Medicine  @relation(fields: [medicineId], references: [id], onDelete: Cascade)
   medicineId Int
   qty        Int
+
+  @@map("saleitem")
 }
 
 model ExchangeRate {
