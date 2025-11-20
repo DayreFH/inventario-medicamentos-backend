@@ -3,14 +3,14 @@ import { PrismaClient } from '@prisma/client';
 let prisma;
 
 try {
+  // Prisma usa DATABASE_URL directamente de la variable de entorno
+  // No necesitamos especificar datasources aquí, Prisma lo lee del schema.prisma
   prisma = new PrismaClient({
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL || "mysql://root:password@localhost:3306/inventario_medicamentos"
-      }
-    },
     log: ['query', 'info', 'warn', 'error'],
   });
+  
+  // Verificar conexión al inicializar
+  console.log('DATABASE_URL configurada:', process.env.DATABASE_URL ? 'Sí' : 'No');
 } catch (error) {
   console.error('Error creating Prisma client:', error);
   // Fallback para cuando Prisma no se puede generar
