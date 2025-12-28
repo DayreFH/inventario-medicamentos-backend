@@ -1,0 +1,4 @@
+Trigger deploy - Fix JWT error
+Fecha: 28 diciembre 2024
+Commit: Force Railway redeploy
+
