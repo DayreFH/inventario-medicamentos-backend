@@ -28,31 +28,58 @@ function monthRange(ym) {
 /**
  * Crear salida (venta)
  * POST /api/sales
- * body: { customerId, date:"YYYY-MM-DD", notes?, items:[{medicineId, qty}] }
+ * body: { customerId, date:"YYYY-MM-DD", paymentMethod?, notes?, items:[{medicineId, qty}] }
  */
 router.post('/', async (req, res) => {
-  const { customerId, date, notes, items } = req.body;
+  const { customerId, date, paymentMethod, notes, items } = req.body;
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Validar stock
+      // Validar stock y obtener costos
+      const medicinesData = [];
       for (const it of items) {
-        const med = await tx.medicine.findUnique({ where: { id: it.medicineId } });
+        const med = await tx.Medicine.findUnique({ 
+          where: { id: it.medicineId },
+          include: {
+            precios: {
+              orderBy: { created_at: 'desc' },
+              take: 1
+            }
+          }
+        });
         if (!med || med.stock < it.qty) {
-          throw new Error(`Stock insuficiente para ${med?.name ?? 'medicamento ' + it.medicineId}`);
+          throw new Error(`Stock insuficiente para ${med?.nombreComercial ?? 'medicamento ' + it.medicineId}`);
         }
+        medicinesData.push({
+          medicineId: it.medicineId,
+          qty: it.qty,
+          costoUnitarioUsd: med.precios?.[0]?.precioCompraUnitario || 0
+        });
       }
 
       const sale = await tx.sale.create({
-        data: { customerId, date: new Date(`${date}T00:00:00`), notes: notes ?? null }
+        data: { 
+          customerId, 
+          date: new Date(`${date}T00:00:00`), 
+          paymentMethod: paymentMethod ?? 'efectivo',
+          notes: notes ?? null 
+        }
       });
 
-      for (const it of items) {
-        await tx.saleItem.create({
-          data: { saleId: sale.id, medicineId: it.medicineId, qty: it.qty }
+      for (let i = 0; i < medicinesData.length; i++) {
+        const medData = medicinesData[i];
+        const itemData = items[i];
+        await tx.saleitem.create({
+          data: { 
+            saleId: sale.id, 
+            medicineId: medData.medicineId, 
+            qty: medData.qty,
+            costo_unitario_usd: medData.costoUnitarioUsd,
+            precio_propuesto_usd: itemData.precioVentaPropuestoUSD || 0
+          }
         });
-        await tx.medicine.update({
-          where: { id: it.medicineId },
-          data: { stock: { decrement: it.qty } }
+        await tx.Medicine.update({
+          where: { id: medData.medicineId },
+          data: { stock: { decrement: medData.qty } }
         });
       }
       return sale;
@@ -66,15 +93,15 @@ router.post('/', async (req, res) => {
 /**
  * EDITAR salida (reemplaza items y ajusta stock por delta)
  * PUT /api/sales/:id
- * body: { customerId, date, notes, items:[{medicineId, qty}] }
+ * body: { customerId, date, paymentMethod, notes, items:[{medicineId, qty}] }
  */
 router.put('/:id', async (req, res) => {
   const id = Number(req.params.id);
-  const { customerId, date, notes, items } = req.body;
+  const { customerId, date, paymentMethod, notes, items } = req.body;
 
   try {
     await prisma.$transaction(async (tx) => {
-      const prevItems = await tx.saleItem.findMany({
+      const prevItems = await tx.saleitem.findMany({
         where: { saleId: id },
         select: { medicineId: true, qty: true }
       });
@@ -92,9 +119,9 @@ router.put('/:id', async (req, res) => {
         const next = nextMap.get(medId) || 0;
         const delta = next - prev; // venta: delta>0 descuenta stock adicional
         if (delta > 0) {
-          const med = await tx.medicine.findUnique({ where: { id: medId } });
+          const med = await tx.Medicine.findUnique({ where: { id: medId } });
           if (!med || med.stock < delta) {
-            throw Object.assign(new Error(`Stock insuficiente para "${med?.name ?? medId}"`), { code: 'STOCK_INSUFFICIENT' });
+            throw Object.assign(new Error(`Stock insuficiente para "${med?.nombreComercial ?? medId}"`), { code: 'STOCK_INSUFFICIENT' });
           }
         }
       }
@@ -105,18 +132,37 @@ router.put('/:id', async (req, res) => {
         const next = nextMap.get(medId) || 0;
         const delta = next - prev;
         if (delta !== 0) {
-          await tx.medicine.update({
+          await tx.Medicine.update({
             where: { id: medId },
             data: { stock: { decrement: delta } } // si delta negativo, incrementa stock
           });
         }
       }
 
-      // Reemplazar items
-      await tx.saleItem.deleteMany({ where: { saleId: id } });
+      // Reemplazar items (obtener costos primero)
+      await tx.saleitem.deleteMany({ where: { saleId: id } });
       if (items.length) {
-        await tx.saleItem.createMany({
-          data: items.map(it => ({ saleId: id, medicineId: it.medicineId, qty: it.qty }))
+        const itemsWithCost = [];
+        for (const it of items) {
+          const med = await tx.Medicine.findUnique({
+            where: { id: it.medicineId },
+            include: {
+              precios: {
+                orderBy: { created_at: 'desc' },
+                take: 1
+              }
+            }
+          });
+          itemsWithCost.push({
+            saleId: id,
+            medicineId: it.medicineId,
+            qty: it.qty,
+            costo_unitario_usd: med?.precios?.[0]?.precioCompraUnitario || 0,
+            precio_propuesto_usd: it.precioVentaPropuestoUSD || 0
+          });
+        }
+        await tx.saleitem.createMany({
+          data: itemsWithCost
         });
       }
 
@@ -126,6 +172,7 @@ router.put('/:id', async (req, res) => {
         data: {
           ...(customerId ? { customerId } : {}),
           ...(date ? { date: new Date(`${date}T00:00:00`) } : {}),
+          ...(paymentMethod ? { paymentMethod } : {}),
           notes: notes ?? null
         }
       });
@@ -213,21 +260,21 @@ router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id);
   try {
     await prisma.$transaction(async (tx) => {
-      const items = await tx.saleItem.findMany({
+      const items = await tx.saleitem.findMany({
         where: { saleId: id },
         select: { medicineId: true, qty: true }
       });
 
       // Revertir stock (sumar lo vendido)
       for (const it of items) {
-        await tx.medicine.update({
+        await tx.Medicine.update({
           where: { id: it.medicineId },
           data: { stock: { increment: it.qty } }
         });
       }
 
       // Borrar items y cabecera
-      await tx.saleItem.deleteMany({ where: { saleId: id } });
+      await tx.saleitem.deleteMany({ where: { saleId: id } });
       await tx.sale.delete({ where: { id } });
     });
 

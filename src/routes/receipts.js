@@ -49,8 +49,8 @@ router.post('/', async (req, res) => {
           receiptId: receipt.id,
           medicineId: it.medicineId,
           qty: it.qty,
-          unitCost: Number(it.unit_cost ?? 0),
-          weightKg: Number(it.weight_kg ?? it.weightKg ?? 0)
+          unit_cost: Number(it.unit_cost ?? 0),
+          weight_kg: Number(it.weight_kg ?? it.weightKg ?? 0)
         };
         let dataToCreate = { ...baseData };
         if (typeof it.lot !== 'undefined') dataToCreate.lot = it.lot ?? null;
@@ -62,7 +62,7 @@ router.post('/', async (req, res) => {
           console.log(`   ❌ Fecha NO válida o vacía. Valor:`, it.expirationDate);
         }
         try {
-          await tx.receiptItem.create({ data: dataToCreate });
+          await tx.receiptitem.create({ data: dataToCreate });
           console.log(`   ✅ Item guardado exitosamente`);
         } catch (err) {
           const msg = String(err?.message || '');
@@ -74,13 +74,13 @@ router.post('/', async (req, res) => {
               retryData.expirationDate = dataToCreate.expirationDate;
               console.log(`   🔄 Retry CON expirationDate:`, retryData.expirationDate);
             }
-            await tx.receiptItem.create({ data: retryData });
+            await tx.receiptitem.create({ data: retryData });
             console.log(`   ✅ Item guardado en retry (sin campo 'lot')`);
           } else {
             throw err;
           }
         }
-        await tx.medicine.update({
+        await tx.Medicine.update({
           where: { id: it.medicineId },
           data: { stock: { increment: it.qty } }
         });
@@ -107,7 +107,7 @@ router.put('/:id', async (req, res) => {
     console.log('[PUT /receipts/:id] payload:', JSON.stringify({ id, supplierId, date, notes, items }, null, 2));
     await prisma.$transaction(async (tx) => {
       // Items actuales
-      const prevItems = await tx.receiptItem.findMany({
+      const prevItems = await tx.receiptitem.findMany({
         where: { receiptId: id },
         select: { medicineId: true, qty: true }
       });
@@ -125,7 +125,7 @@ router.put('/:id', async (req, res) => {
         const next = nextMap.get(medId) || 0;
         const delta = next - prev;
         if (delta < 0) {
-          const med = await tx.medicine.findUnique({ where: { id: medId } });
+          const med = await tx.Medicine.findUnique({ where: { id: medId } });
           if (!med) throw new Error(`Medicamento ${medId} no existe`);
           if (med.stock + delta < 0) {
             const err = new Error(`No se puede reducir la entrada de "${med.name}" tanto; dejaría stock negativo.`);
@@ -141,7 +141,7 @@ router.put('/:id', async (req, res) => {
         const next = nextMap.get(medId) || 0;
         const delta = next - prev;
         if (delta !== 0) {
-          await tx.medicine.update({
+          await tx.Medicine.update({
             where: { id: medId },
             data: { stock: { increment: delta } }
           });
@@ -149,21 +149,21 @@ router.put('/:id', async (req, res) => {
       }
 
       // Reemplazar items
-      await tx.receiptItem.deleteMany({ where: { receiptId: id } });
+      await tx.receiptitem.deleteMany({ where: { receiptId: id } });
       if (items.length) {
         const payload = items.map(it => ({
           receiptId: id,
           medicineId: it.medicineId,
           qty: it.qty,
-          unitCost: Number(it.unit_cost ?? 0),
-          weightKg: Number(it.weight_kg ?? it.weightKg ?? 0),
+          unit_cost: Number(it.unit_cost ?? 0),
+          weight_kg: Number(it.weight_kg ?? it.weightKg ?? 0),
           ...(typeof it.lot !== 'undefined' ? { lot: it.lot ?? null } : {}),
           ...(it.expirationDate && /^\d{4}-\d{2}-\d{2}$/.test(String(it.expirationDate))
             ? { expirationDate: new Date(`${it.expirationDate}T00:00:00`) }
             : {})
         }));
         try {
-          await tx.receiptItem.createMany({ data: payload });
+          await tx.receiptitem.createMany({ data: payload });
         } catch (err) {
           const msg = String(err?.message || '');
           console.warn('[PUT /receipts/:id] fallback due to:', msg);
@@ -174,8 +174,8 @@ router.put('/:id', async (req, res) => {
                 receiptId: id,
                 medicineId: it.medicineId,
                 qty: it.qty,
-                unitCost: Number(it.unit_cost ?? 0),
-                weightKg: Number(it.weight_kg ?? it.weightKg ?? 0)
+                unit_cost: Number(it.unit_cost ?? 0),
+                weight_kg: Number(it.weight_kg ?? it.weightKg ?? 0)
               };
               
               // Agregar expirationDate si existe y es válida
@@ -183,7 +183,7 @@ router.put('/:id', async (req, res) => {
                 retryData.expirationDate = new Date(`${it.expirationDate}T00:00:00`);
               }
               
-              await tx.receiptItem.create({ data: retryData });
+              await tx.receiptitem.create({ data: retryData });
             }
           } else {
             throw err;
@@ -242,7 +242,7 @@ router.get('/', async (req, res) => {
 
   const whereClause = {
     ...where,
-    ...(q ? { items: { some: { medicine: { nombreComercial: { contains: String(q) } } } } } : {})
+    ...(q ? { receiptitem: { some: { medicine: { nombreComercial: { contains: String(q) } } } } } : {})
   };
 
   try {
@@ -253,7 +253,7 @@ router.get('/', async (req, res) => {
         orderBy: { date: 'desc' },
         include: {
           supplier: true,
-          items: { include: { medicine: true } }
+          receiptitem: { include: { medicine: true } }
         },
         skip: skip,
         take: limit
@@ -285,14 +285,14 @@ router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id);
   try {
     await prisma.$transaction(async (tx) => {
-      const items = await tx.receiptItem.findMany({
+      const items = await tx.receiptitem.findMany({
         where: { receiptId: id },
         select: { medicineId: true, qty: true }
       });
 
       // Validar que revertir no deje stock negativo
       for (const it of items) {
-        const med = await tx.medicine.findUnique({ where: { id: it.medicineId } });
+        const med = await tx.Medicine.findUnique({ where: { id: it.medicineId } });
         if (med.stock - it.qty < 0) {
           const err = new Error(`No se puede eliminar: dejaría stock negativo para "${med.name}"`);
           err.code = 'STOCK_NEGATIVE';
@@ -302,14 +302,14 @@ router.delete('/:id', async (req, res) => {
 
       // Revertir stock
       for (const it of items) {
-        await tx.medicine.update({
+        await tx.Medicine.update({
           where: { id: it.medicineId },
           data: { stock: { decrement: it.qty } }
         });
       }
 
       // Borrar items y cabecera
-      await tx.receiptItem.deleteMany({ where: { receiptId: id } });
+      await tx.receiptitem.deleteMany({ where: { receiptId: id } });
       await tx.receipt.delete({ where: { id } });
     });
 

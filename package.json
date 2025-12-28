@@ -4,12 +4,7 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "prisma:studio": "prisma studio",
-    "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
-    "prisma:migrate": "prisma migrate dev",
-    "build": "prisma generate",
-    "postinstall": "prisma generate"
+    "prisma:studio": "prisma studio"
   },
   "devDependencies": {
     "prisma": "^6.14.0"
@@ -20,6 +15,7 @@
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.1.2",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",

@@ -1,0 +1,1338 @@
+{
+  "timestamp": "2025-12-28T01:38:53.431Z",
+  "version": "1.0",
+  "data": {
+    "users": [
+      {
+        "id": 4,
+        "email": "dayrefh@gmail.com",
+        "password": "$2b$10$FknkGgf2fHx9c25d8NNdlOqUhYDmJjAqS3hoMBdbInHY1opwPIWvi",
+        "name": "Dayre",
+        "isActive": true,
+        "created_at": "2025-12-02T03:17:35.147Z",
+        "updated_at": "2025-12-26T02:21:57.968Z",
+        "roleId": 3
+      },
+      {
+        "id": 5,
+        "email": "admin@inventario.com",
+        "password": "$2b$10$I5df21oTsbL0t/4X.KiieegrarankJ4qfWCAXKei2eoWYxPqEsBPW",
+        "name": "Administrador",
+        "isActive": true,
+        "created_at": "2025-12-02T04:18:31.424Z",
+        "updated_at": "2025-12-25T19:37:59.379Z",
+        "roleId": 1
+      },
+      {
+        "id": 6,
+        "email": "mana@inventario.com",
+        "password": "$2b$10$tQn2tS9ZNFqIt7.YsgsuJOIiDl3YA9.HGIC4oX8v8E0StpCEUljRW",
+        "name": "Mana",
+        "isActive": true,
+        "created_at": "2025-12-26T03:16:23.068Z",
+        "updated_at": "2025-12-26T03:17:50.514Z",
+        "roleId": 5
+      }
+    ],
+    "roles": [
+      {
+        "id": 1,
+        "name": "Administrador",
+        "description": "Acceso completo al sistema",
+        "startPanel": "/dashboard",
+        "created_at": "2025-12-01T22:39:11.000Z",
+        "updated_at": "2025-12-26T02:14:28.609Z",
+        "permissions": "[\"admin.dop-usd\",\"admin.usd-mn\",\"admin.shipping\",\"dashboard.alerts\",\"dashboard.top-customers\",\"dashboard.best-prices\",\"dashboard.expiry\",\"dashboard.idle\",\"reports.financial\",\"users.list\",\"users.roles\",\"roles\",\"medicines\",\"customers\",\"suppliers\",\"receipts\",\"sales\"]",
+        "isActive": true
+      },
+      {
+        "id": 3,
+        "name": "Vendedor",
+        "description": "Solo ventas",
+        "startPanel": "/sales",
+        "created_at": "2025-12-02T03:15:47.028Z",
+        "updated_at": "2025-12-25T22:26:20.005Z",
+        "permissions": "[\"sales\",\"dashboard.alerts\",\"dashboard.top-customers\",\"dashboard.best-prices\",\"dashboard.expiry\",\"dashboard.idle\"]",
+        "isActive": true
+      },
+      {
+        "id": 5,
+        "name": "Analista",
+        "description": "Analizar Datos",
+        "startPanel": "/dashboard",
+        "created_at": "2025-12-26T03:15:29.709Z",
+        "updated_at": "2025-12-26T03:15:29.708Z",
+        "permissions": "[\"dashboard.top-customers\",\"dashboard.best-prices\",\"reports.financial\"]",
+        "isActive": true
+      }
+    ],
+    "medicines": [
+      {
+        "id": 2,
+        "codigo": "0001",
+        "nombreComercial": "ALBENDAZOL 400 MG X 100 TAB",
+        "nombreGenerico": "ALBENDAZOL",
+        "formaFarmaceutica": "comprimidos",
+        "concentracion": "mg",
+        "presentacion": "blister",
+        "fechaVencimiento": "2025-11-30T00:00:00.000Z",
+        "pesoKg": "0.08",
+        "stock": 27,
+        "created_at": "2025-09-15T01:45:24.680Z",
+        "updated_at": "2025-10-30T17:40:14.702Z",
+        "parametros": {
+          "id": 1,
+          "medicineId": 2,
+          "stockMinimo": 10,
+          "alertaCaducidad": 32,
+          "tiempoSinMovimiento": 30,
+          "created_at": "2025-09-15T01:49:55.465Z",
+          "updated_at": "2025-11-02T14:27:25.519Z"
+        },
+        "precios": [
+          {
+            "id": 1,
+            "medicineId": 2,
+            "precioCompraUnitario": "150",
+            "margenUtilidad": "38",
+            "precioVentaUnitario": "241.94",
+            "precioLimiteDescuento": null,
+            "activo": false,
+            "created_at": "2025-09-15T01:47:48.621Z",
+            "updated_at": "2025-12-01T15:34:26.249Z",
+            "supplierId": null
+          },
+          {
+            "id": 2,
+            "medicineId": 2,
+            "precioCompraUnitario": "120",
+            "margenUtilidad": "38",
+            "precioVentaUnitario": "193.55",
+            "precioLimiteDescuento": null,
+            "activo": false,
+            "created_at": "2025-09-15T01:48:25.927Z",
+            "updated_at": "2025-12-01T15:34:20.957Z",
+            "supplierId": null
+          },
+          {
+            "id": 10,
+            "medicineId": 2,
+            "precioCompraUnitario": "200",
+            "margenUtilidad": "0",
+            "precioVentaUnitario": "200",
+            "precioLimiteDescuento": null,
+            "activo": true,
+            "created_at": "2025-12-01T15:34:07.612Z",
+            "updated_at": "2025-12-01T15:34:07.612Z",
+            "supplierId": 3
+          },
+          {
+            "id": 11,
+            "medicineId": 2,
+            "precioCompraUnitario": "150",
+            "margenUtilidad": "0",
+            "precioVentaUnitario": "150",
+            "precioLimiteDescuento": null,
+            "activo": true,
+            "created_at": "2025-12-01T15:34:15.455Z",
+            "updated_at": "2025-12-01T15:34:15.455Z",
+            "supplierId": 2
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "codigo": "0002",
+        "nombreComercial": "ACICLOVIR CREMA 5%",
+        "nombreGenerico": "ACICLOVIR",
+        "formaFarmaceutica": "pomadas",
+        "concentracion": "mg",
+        "presentacion": "tubo",
+        "fechaVencimiento": "2025-11-06T00:00:00.000Z",
+        "pesoKg": "0.03",
+        "stock": 50,
+        "created_at": "2025-10-27T16:41:21.354Z",
+        "updated_at": "2025-12-25T14:27:25.849Z",
+        "parametros": {
+          "id": 2,
+          "medicineId": 4,
+          "stockMinimo": 10,
+          "alertaCaducidad": 30,
+          "tiempoSinMovimiento": 2,
+          "created_at": "2025-10-27T16:43:14.861Z",
+          "updated_at": "2025-10-30T14:02:53.937Z"
+        },
+        "precios": [
+          {
+            "id": 3,
+            "medicineId": 4,
+            "precioCompraUnitario": "47",
+            "margenUtilidad": "37",
+            "precioVentaUnitario": "74.6",
+            "precioLimiteDescuento": null,
+            "activo": false,
+            "created_at": "2025-10-27T16:42:09.741Z",
+            "updated_at": "2025-12-01T15:33:39.786Z",
+            "supplierId": null
+          },
+          {
+            "id": 4,
+            "medicineId": 4,
+            "precioCompraUnitario": "35.11",
+            "margenUtilidad": "37",
+            "precioVentaUnitario": "55.73",
+            "precioLimiteDescuento": null,
+            "activo": false,
+            "created_at": "2025-10-27T16:42:53.223Z",
+            "updated_at": "2025-12-01T15:33:45.472Z",
+            "supplierId": null
+          },
+          {
+            "id": 5,
+            "medicineId": 4,
+            "precioCompraUnitario": "50",
+            "margenUtilidad": "0",
+            "precioVentaUnitario": "50",
+            "precioLimiteDescuento": null,
+            "activo": true,
+            "created_at": "2025-10-29T14:15:14.307Z",
+            "updated_at": "2025-10-29T14:15:14.307Z",
+            "supplierId": 2
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "codigo": "0003",
+        "nombreComercial": "ACETAMINOFEN",
+        "nombreGenerico": "ACETAMINOFEN  300 MGX100/ 10 UND",
+        "formaFarmaceutica": "supositorios",
+        "concentracion": "mg",
+        "presentacion": "otros",
+        "fechaVencimiento": "2026-04-30T00:00:00.000Z",
+        "pesoKg": "0.02",
+        "stock": 5,
+        "created_at": "2025-10-29T14:51:36.668Z",
+        "updated_at": "2025-12-27T18:30:02.883Z",
+        "parametros": {
+          "id": 3,
+          "medicineId": 5,
+          "stockMinimo": 10,
+          "alertaCaducidad": 20,
+          "tiempoSinMovimiento": 1,
+          "created_at": "2025-10-29T14:53:10.776Z",
+          "updated_at": "2025-10-30T15:13:27.496Z"
+        },
+        "precios": [
+          {
+            "id": 6,
+            "medicineId": 5,
+            "precioCompraUnitario": "473.41",
+            "margenUtilidad": "0",
+            "precioVentaUnitario": "473.41",
+            "precioLimiteDescuento": null,
+            "activo": true,
+            "created_at": "2025-10-29T14:52:35.654Z",
+            "updated_at": "2025-10-29T14:52:35.654Z",
+            "supplierId": 1
+          },
+          {
+            "id": 7,
+            "medicineId": 5,
+            "precioCompraUnitario": "500",
+            "margenUtilidad": "0",
+            "precioVentaUnitario": "500",
+            "precioLimiteDescuento": null,
+            "activo": true,
+            "created_at": "2025-10-29T14:52:45.540Z",
+            "updated_at": "2025-10-29T14:52:45.540Z",
+            "supplierId": 2
+          },
+          {
+            "id": 8,
+            "medicineId": 5,
+            "precioCompraUnitario": "350",
+            "margenUtilidad": "0",
+            "precioVentaUnitario": "350",
+            "precioLimiteDescuento": null,
+            "activo": true,
+            "created_at": "2025-10-29T15:09:13.691Z",
+            "updated_at": "2025-10-29T15:09:13.691Z",
+            "supplierId": 3
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "codigo": "0004",
+        "nombreComercial": "AGUA OXIGENADA",
+        "nombreGenerico": "AGUA OXIGENADA 10 VOL 4 OZ",
+        "formaFarmaceutica": "soluciones",
+        "concentracion": "estandar",
+        "presentacion": "frasco",
+        "fechaVencimiento": null,
+        "pesoKg": "0.32",
+        "stock": 9,
+        "created_at": "2025-11-02T15:18:46.432Z",
+        "updated_at": "2025-11-02T16:29:59.836Z",
+        "parametros": {
+          "id": 4,
+          "medicineId": 6,
+          "stockMinimo": 9,
+          "alertaCaducidad": 30,
+          "tiempoSinMovimiento": 25,
+          "created_at": "2025-11-02T15:20:27.513Z",
+          "updated_at": "2025-11-02T15:20:27.513Z"
+        },
+        "precios": [
+          {
+            "id": 9,
+            "medicineId": 6,
+            "precioCompraUnitario": "21",
+            "margenUtilidad": "0",
+            "precioVentaUnitario": "21",
+            "precioLimiteDescuento": null,
+            "activo": true,
+            "created_at": "2025-11-02T15:19:54.656Z",
+            "updated_at": "2025-11-02T15:19:54.656Z",
+            "supplierId": 1
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "codigo": "0005",
+        "nombreComercial": "DICLOPLEX FORTE",
+        "nombreGenerico": "DICLOPLEX FORTE",
+        "formaFarmaceutica": "comprimidos",
+        "concentracion": "mg",
+        "presentacion": "blister",
+        "fechaVencimiento": null,
+        "pesoKg": "0.04",
+        "stock": 10,
+        "created_at": "2025-12-27T00:12:22.216Z",
+        "updated_at": "2025-12-27T19:33:45.367Z",
+        "parametros": {
+          "id": 5,
+          "medicineId": 7,
+          "stockMinimo": 20,
+          "alertaCaducidad": 45,
+          "tiempoSinMovimiento": 60,
+          "created_at": "2025-12-27T00:13:32.260Z",
+          "updated_at": "2025-12-27T00:21:45.572Z"
+        },
+        "precios": [
+          {
+            "id": 12,
+            "medicineId": 7,
+            "precioCompraUnitario": "100",
+            "margenUtilidad": "0",
+            "precioVentaUnitario": "100",
+            "precioLimiteDescuento": null,
+            "activo": true,
+            "created_at": "2025-12-27T00:12:48.732Z",
+            "updated_at": "2025-12-27T00:12:48.732Z",
+            "supplierId": 3
+          }
+        ]
+      }
+    ],
+    "customers": [
+      {
+        "id": 1,
+        "name": "Juan",
+        "phone": "58208212",
+        "created_at": "2025-10-27T16:34:23.504Z",
+        "email": null,
+        "rnc": null,
+        "fiscalAddress": null
+      },
+      {
+        "id": 2,
+        "name": "Dayre",
+        "phone": "+53 58208212",
+        "created_at": "2025-10-29T13:52:30.717Z",
+        "email": "dayrefh@gmail.com",
+        "rnc": null,
+        "fiscalAddress": null
+      },
+      {
+        "id": 3,
+        "name": "Manin",
+        "phone": "+1-829 8795930",
+        "created_at": "2025-10-29T13:57:13.107Z",
+        "email": "arilalixavi@gmail.com",
+        "rnc": null,
+        "fiscalAddress": null
+      },
+      {
+        "id": 4,
+        "name": "Pepe",
+        "phone": "+53 58204567",
+        "created_at": "2025-12-27T00:42:27.345Z",
+        "email": null,
+        "rnc": null,
+        "fiscalAddress": null
+      }
+    ],
+    "suppliers": [
+      {
+        "id": 1,
+        "name": "Suplifarma",
+        "phone": null,
+        "created_at": "2025-09-18T14:22:08.693Z"
+      },
+      {
+        "id": 2,
+        "name": "Multicomer",
+        "phone": "+1-809 7564334",
+        "created_at": "2025-10-29T14:04:00.229Z"
+      },
+      {
+        "id": 3,
+        "name": "Rudi",
+        "phone": null,
+        "created_at": "2025-10-29T15:08:47.226Z"
+      }
+    ],
+    "sales": [
+      {
+        "id": 1,
+        "customerId": 1,
+        "date": "2025-10-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 450",
+        "created_at": "2025-10-27T17:19:23.752Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 1,
+            "saleId": 1,
+            "medicineId": 4,
+            "qty": 20,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "customerId": 1,
+        "date": "2025-10-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 450",
+        "created_at": "2025-10-27T17:19:56.388Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 2,
+            "saleId": 2,
+            "medicineId": 2,
+            "qty": 10,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "customerId": 1,
+        "date": "2025-10-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 450",
+        "created_at": "2025-10-27T18:37:35.696Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 3,
+            "saleId": 3,
+            "medicineId": 4,
+            "qty": 5,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "customerId": 1,
+        "date": "2025-10-29T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-10-29T13:19:27.435Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 4,
+            "saleId": 4,
+            "medicineId": 4,
+            "qty": 5,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "customerId": 1,
+        "date": "2025-10-29T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-10-29T15:36:30.599Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 5,
+            "saleId": 5,
+            "medicineId": 4,
+            "qty": 3,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          },
+          {
+            "id": 6,
+            "saleId": 5,
+            "medicineId": 2,
+            "qty": 20,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "customerId": 3,
+        "date": "2025-10-29T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-10-29T15:36:56.043Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 7,
+            "saleId": 6,
+            "medicineId": 2,
+            "qty": 5,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "customerId": 1,
+        "date": "2025-10-29T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-10-29T19:17:22.448Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 8,
+            "saleId": 7,
+            "medicineId": 2,
+            "qty": 6,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "customerId": 1,
+        "date": "2025-10-29T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-10-29T20:59:05.204Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 9,
+            "saleId": 8,
+            "medicineId": 5,
+            "qty": 25,
+            "costo_unitario_usd": "0",
+            "precio_propuesto_usd": "0",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "customerId": 1,
+        "date": "2025-12-01T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 450",
+        "created_at": "2025-12-01T20:24:00.105Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 10,
+            "saleId": 9,
+            "medicineId": 5,
+            "qty": 10,
+            "costo_unitario_usd": "5.77",
+            "precio_propuesto_usd": "25",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "customerId": 2,
+        "date": "2025-12-26T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 450",
+        "created_at": "2025-12-26T21:13:05.045Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 11,
+            "saleId": 14,
+            "medicineId": 5,
+            "qty": 10,
+            "costo_unitario_usd": "350",
+            "precio_propuesto_usd": "10",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "customerId": 4,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 450",
+        "created_at": "2025-12-27T00:44:53.511Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 12,
+            "saleId": 15,
+            "medicineId": 7,
+            "qty": 4,
+            "costo_unitario_usd": "100",
+            "precio_propuesto_usd": "15",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "customerId": 2,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-12-27T17:35:44.046Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 13,
+            "saleId": 16,
+            "medicineId": 5,
+            "qty": 20,
+            "costo_unitario_usd": "350",
+            "precio_propuesto_usd": "10",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "customerId": 2,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-12-27T18:02:08.822Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 14,
+            "saleId": 17,
+            "medicineId": 5,
+            "qty": 15,
+            "costo_unitario_usd": "350",
+            "precio_propuesto_usd": "10",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "customerId": 2,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-12-27T18:21:32.163Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 15,
+            "saleId": 18,
+            "medicineId": 5,
+            "qty": 5,
+            "costo_unitario_usd": "350",
+            "precio_propuesto_usd": "10",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "customerId": 2,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-12-27T18:26:38.107Z",
+        "paymentMethod": "transferencia",
+        "saleitem": [
+          {
+            "id": 16,
+            "saleId": 19,
+            "medicineId": 5,
+            "qty": 5,
+            "costo_unitario_usd": "350",
+            "precio_propuesto_usd": "10",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 20,
+        "customerId": 2,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-12-27T18:30:02.879Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 17,
+            "saleId": 20,
+            "medicineId": 5,
+            "qty": 5,
+            "costo_unitario_usd": "350",
+            "precio_propuesto_usd": "10",
+            "supplierId": null
+          }
+        ]
+      },
+      {
+        "id": 21,
+        "customerId": 2,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Venta con tasa DOP-USD: 62.83, Tasa envío internacional: 10, Tasa MN: 460",
+        "created_at": "2025-12-27T19:33:45.363Z",
+        "paymentMethod": "efectivo",
+        "saleitem": [
+          {
+            "id": 18,
+            "saleId": 21,
+            "medicineId": 7,
+            "qty": 4,
+            "costo_unitario_usd": "100",
+            "precio_propuesto_usd": "15",
+            "supplierId": null
+          }
+        ]
+      }
+    ],
+    "receipts": [
+      {
+        "id": 1,
+        "supplierId": 1,
+        "date": "2025-10-27T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-27T17:05:14.091Z",
+        "receiptitem": [
+          {
+            "id": 1,
+            "receiptId": 1,
+            "medicineId": 4,
+            "qty": 50,
+            "unit_cost": "24",
+            "weight_kg": "0.03",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "supplierId": 1,
+        "date": "2025-10-27T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-27T17:13:07.161Z",
+        "receiptitem": [
+          {
+            "id": 2,
+            "receiptId": 2,
+            "medicineId": 2,
+            "qty": 50,
+            "unit_cost": "25.5",
+            "weight_kg": "0.08",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "supplierId": 1,
+        "date": "2025-10-29T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-29T13:39:33.577Z",
+        "receiptitem": [
+          {
+            "id": 3,
+            "receiptId": 3,
+            "medicineId": 4,
+            "qty": 5,
+            "unit_cost": "35.11",
+            "weight_kg": "0.03",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "supplierId": 2,
+        "date": "2025-10-29T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-29T14:54:36.335Z",
+        "receiptitem": [
+          {
+            "id": 4,
+            "receiptId": 4,
+            "medicineId": 5,
+            "qty": 20,
+            "unit_cost": "500",
+            "weight_kg": "0.02",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "supplierId": 3,
+        "date": "2025-10-29T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-29T20:57:03.491Z",
+        "receiptitem": [
+          {
+            "id": 5,
+            "receiptId": 5,
+            "medicineId": 5,
+            "qty": 20,
+            "unit_cost": "350",
+            "weight_kg": "0.02",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "supplierId": 3,
+        "date": "2025-10-30T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-30T16:27:22.858Z",
+        "receiptitem": [
+          {
+            "id": 6,
+            "receiptId": 10,
+            "medicineId": 5,
+            "qty": 40,
+            "unit_cost": "350",
+            "weight_kg": "0.02",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "supplierId": 2,
+        "date": "2025-10-30T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-30T16:42:45.292Z",
+        "receiptitem": [
+          {
+            "id": 7,
+            "receiptId": 11,
+            "medicineId": 2,
+            "qty": 5,
+            "unit_cost": "150",
+            "weight_kg": "0.08",
+            "expirationDate": null,
+            "lot": null
+          },
+          {
+            "id": 8,
+            "receiptId": 11,
+            "medicineId": 4,
+            "qty": 5,
+            "unit_cost": "35.11",
+            "weight_kg": "0.03",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "supplierId": 3,
+        "date": "2025-10-30T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-30T16:53:24.861Z",
+        "receiptitem": [
+          {
+            "id": 9,
+            "receiptId": 12,
+            "medicineId": 2,
+            "qty": 10,
+            "unit_cost": "150",
+            "weight_kg": "0.08",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "supplierId": 2,
+        "date": "2025-10-30T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-30T16:58:15.659Z",
+        "receiptitem": [
+          {
+            "id": 10,
+            "receiptId": 13,
+            "medicineId": 4,
+            "qty": 10,
+            "unit_cost": "50",
+            "weight_kg": "0.03",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "supplierId": 2,
+        "date": "2025-10-30T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-10-30T17:40:14.683Z",
+        "receiptitem": [
+          {
+            "id": 11,
+            "receiptId": 14,
+            "medicineId": 4,
+            "qty": 3,
+            "unit_cost": "50",
+            "weight_kg": "0.03",
+            "expirationDate": null,
+            "lot": null
+          },
+          {
+            "id": 12,
+            "receiptId": 14,
+            "medicineId": 2,
+            "qty": 3,
+            "unit_cost": "150",
+            "weight_kg": "0.08",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "supplierId": 1,
+        "date": "2025-11-02T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-11-02T15:21:54.224Z",
+        "receiptitem": [
+          {
+            "id": 13,
+            "receiptId": 15,
+            "medicineId": 6,
+            "qty": 5,
+            "unit_cost": "21",
+            "weight_kg": "0.32",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "supplierId": 1,
+        "date": "2025-11-02T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-11-02T16:29:59.807Z",
+        "receiptitem": [
+          {
+            "id": 14,
+            "receiptId": 16,
+            "medicineId": 6,
+            "qty": 4,
+            "unit_cost": "21",
+            "weight_kg": "0.32",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "supplierId": 2,
+        "date": "2025-11-02T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-11-02T16:35:15.298Z",
+        "receiptitem": [
+          {
+            "id": 15,
+            "receiptId": 17,
+            "medicineId": 5,
+            "qty": 5,
+            "unit_cost": "500",
+            "weight_kg": "0.02",
+            "expirationDate": null,
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "supplierId": 3,
+        "date": "2025-11-02T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-11-02T16:48:17.328Z",
+        "receiptitem": [
+          {
+            "id": 16,
+            "receiptId": 19,
+            "medicineId": 5,
+            "qty": 5,
+            "unit_cost": "350",
+            "weight_kg": "0.02",
+            "expirationDate": "2025-11-04T04:00:00.000Z",
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 20,
+        "supplierId": 3,
+        "date": "2025-12-02T04:00:00.000Z",
+        "notes": "",
+        "created_at": "2025-12-02T16:13:55.446Z",
+        "receiptitem": [
+          {
+            "id": 17,
+            "receiptId": 20,
+            "medicineId": 5,
+            "qty": 10,
+            "unit_cost": "350",
+            "weight_kg": "0.02",
+            "expirationDate": "2026-01-30T04:00:00.000Z",
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 21,
+        "supplierId": 2,
+        "date": "2025-12-25T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-12-25T14:27:25.836Z",
+        "receiptitem": [
+          {
+            "id": 18,
+            "receiptId": 21,
+            "medicineId": 4,
+            "qty": 10,
+            "unit_cost": "50",
+            "weight_kg": "0.03",
+            "expirationDate": "2026-01-30T04:00:00.000Z",
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 24,
+        "supplierId": 3,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-12-27T00:27:50.385Z",
+        "receiptitem": [
+          {
+            "id": 19,
+            "receiptId": 24,
+            "medicineId": 7,
+            "qty": 8,
+            "unit_cost": "100",
+            "weight_kg": "0.04",
+            "expirationDate": "2025-11-26T04:00:00.000Z",
+            "lot": null
+          }
+        ]
+      },
+      {
+        "id": 25,
+        "supplierId": 3,
+        "date": "2025-12-27T04:00:00.000Z",
+        "notes": "Entrada con tasa DOP-USD: 62.83, Tasa envío internacional: 10",
+        "created_at": "2025-12-27T17:40:15.823Z",
+        "receiptitem": [
+          {
+            "id": 20,
+            "receiptId": 25,
+            "medicineId": 7,
+            "qty": 10,
+            "unit_cost": "100",
+            "weight_kg": "0.04",
+            "expirationDate": "2026-01-27T04:00:00.000Z",
+            "lot": null
+          }
+        ]
+      }
+    ],
+    "invoices": [
+      {
+        "id": 3,
+        "saleId": 21,
+        "ncf": "B0100000001",
+        "subtotal": "60",
+        "itbis": "0",
+        "itbisAmount": "0",
+        "discount": "0",
+        "discountAmount": "0",
+        "total": "60",
+        "notes": null,
+        "status": "emitida",
+        "createdAt": "2025-12-28T00:11:49.684Z",
+        "updatedAt": "2025-12-28T00:11:49.684Z"
+      }
+    ],
+    "companySettings": [
+      {
+        "id": 1,
+        "companyName": "ARILALIXAVI",
+        "rnc": "",
+        "address": "Reparto Este. Santo Domingo . Rep.Dominicana",
+        "phone": "",
+        "email": "arilalixavi@gmail.com",
+        "logo": null,
+        "invoicePrefix": "FAC",
+        "invoiceSequence": 1,
+        "taxRate": "0",
+        "footerText": "\"Gracias por su preferencia\"",
+        "autoGenerateNCF": true,
+        "ncfType": "B01",
+        "ncfSequence": 2,
+        "ncfPrefix": "B01",
+        "ncfRangeStart": null,
+        "ncfRangeEnd": null,
+        "created_at": "2025-12-27T13:32:08.000Z",
+        "updated_at": "2025-12-28T00:11:49.689Z"
+      }
+    ],
+    "exchangeRates": [
+      {
+        "id": 1,
+        "fromCurrency": "USD",
+        "toCurrency": "DOP",
+        "rate": "56.5",
+        "source": "manual",
+        "date": "2025-09-14T04:00:00.000Z",
+        "isActive": false,
+        "created_at": "2025-09-15T02:24:01.963Z",
+        "updated_at": "2025-09-15T03:29:40.923Z",
+        "buyRate": null,
+        "sellRate": null
+      },
+      {
+        "id": 5,
+        "fromCurrency": "USD",
+        "toCurrency": "DOP",
+        "rate": "64.1854",
+        "source": "banco_central",
+        "date": "2025-10-30T04:00:00.000Z",
+        "isActive": false,
+        "created_at": "2025-10-30T12:00:15.869Z",
+        "updated_at": "2025-10-30T12:00:16.196Z",
+        "buyRate": "63.9204",
+        "sellRate": "64.4503"
+      },
+      {
+        "id": 13,
+        "fromCurrency": "USD",
+        "toCurrency": "DOP",
+        "rate": "62.7715",
+        "source": "banco_central",
+        "date": "2025-12-25T04:00:00.000Z",
+        "isActive": false,
+        "created_at": "2025-12-25T12:00:09.585Z",
+        "updated_at": "2025-12-25T12:00:11.392Z",
+        "buyRate": "62.6166",
+        "sellRate": "62.9264"
+      }
+    ],
+    "exchangeRatesMN": [
+      {
+        "id": 1,
+        "buyRate": "420",
+        "sellRate": "460",
+        "source": "manual",
+        "date": "2025-10-29T13:28:10.789Z",
+        "isActive": false,
+        "created_at": "2025-10-29T13:28:10.793Z",
+        "updated_at": "2025-10-30T13:03:37.520Z"
+      },
+      {
+        "id": 2,
+        "buyRate": "480",
+        "sellRate": "500",
+        "source": "manual",
+        "date": "2025-10-30T13:03:37.524Z",
+        "isActive": false,
+        "created_at": "2025-10-30T13:03:37.526Z",
+        "updated_at": "2025-10-30T15:08:00.904Z"
+      },
+      {
+        "id": 3,
+        "buyRate": "480",
+        "sellRate": "500",
+        "source": "manual",
+        "date": "2025-10-30T15:08:00.907Z",
+        "isActive": false,
+        "created_at": "2025-10-30T15:08:00.909Z",
+        "updated_at": "2025-11-30T17:24:25.557Z"
+      },
+      {
+        "id": 4,
+        "buyRate": "430",
+        "sellRate": "450",
+        "source": "manual",
+        "date": "2025-11-30T17:24:25.578Z",
+        "isActive": false,
+        "created_at": "2025-11-30T17:24:25.580Z",
+        "updated_at": "2025-12-01T14:38:08.477Z"
+      },
+      {
+        "id": 5,
+        "buyRate": "430",
+        "sellRate": "450",
+        "source": "manual",
+        "date": "2025-12-01T14:38:08.494Z",
+        "isActive": false,
+        "created_at": "2025-12-01T14:38:08.496Z",
+        "updated_at": "2025-12-02T04:52:17.415Z"
+      },
+      {
+        "id": 6,
+        "buyRate": "430",
+        "sellRate": "450",
+        "source": "manual",
+        "date": "2025-12-02T04:52:17.426Z",
+        "isActive": false,
+        "created_at": "2025-12-02T04:52:17.432Z",
+        "updated_at": "2025-12-22T14:57:15.926Z"
+      },
+      {
+        "id": 7,
+        "buyRate": "410",
+        "sellRate": "440",
+        "source": "manual",
+        "date": "2025-12-22T14:57:15.942Z",
+        "isActive": false,
+        "created_at": "2025-12-22T14:57:15.944Z",
+        "updated_at": "2025-12-23T22:14:27.970Z"
+      },
+      {
+        "id": 8,
+        "buyRate": "410",
+        "sellRate": "450",
+        "source": "manual",
+        "date": "2025-12-23T22:14:27.974Z",
+        "isActive": false,
+        "created_at": "2025-12-23T22:14:27.975Z",
+        "updated_at": "2025-12-25T12:01:00.159Z"
+      },
+      {
+        "id": 9,
+        "buyRate": "410",
+        "sellRate": "460",
+        "source": "manual",
+        "date": "2025-12-25T12:01:00.164Z",
+        "isActive": false,
+        "created_at": "2025-12-25T12:01:00.166Z",
+        "updated_at": "2025-12-26T05:19:51.194Z"
+      },
+      {
+        "id": 10,
+        "buyRate": "410",
+        "sellRate": "450",
+        "source": "manual",
+        "date": "2025-12-26T05:19:51.210Z",
+        "isActive": false,
+        "created_at": "2025-12-26T05:19:51.212Z",
+        "updated_at": "2025-12-27T15:40:30.288Z"
+      },
+      {
+        "id": 11,
+        "buyRate": "420",
+        "sellRate": "460",
+        "source": "manual",
+        "date": "2025-12-27T15:40:30.311Z",
+        "isActive": true,
+        "created_at": "2025-12-27T15:40:30.313Z",
+        "updated_at": "2025-12-27T15:40:30.313Z"
+      }
+    ],
+    "shippingRates": [
+      {
+        "id": 1,
+        "domesticRate": "5",
+        "internationalRate": "10",
+        "weight": "1",
+        "description": null,
+        "source": "manual",
+        "date": "2025-10-29T13:38:31.789Z",
+        "isActive": true,
+        "created_at": "2025-10-29T13:38:31.794Z",
+        "updated_at": "2025-10-29T13:38:31.794Z"
+      }
+    ],
+    "paymentMethods": [
+      {
+        "id": 1,
+        "name": "efectivo",
+        "displayName": "Efectivo",
+        "isActive": true,
+        "sortOrder": 1,
+        "created_at": "2025-12-27T13:32:08.000Z"
+      },
+      {
+        "id": 2,
+        "name": "tarjeta",
+        "displayName": "Tarjeta de Crédito/Débito",
+        "isActive": true,
+        "sortOrder": 2,
+        "created_at": "2025-12-27T13:32:08.000Z"
+      },
+      {
+        "id": 3,
+        "name": "transferencia",
+        "displayName": "Transferencia Bancaria",
+        "isActive": true,
+        "sortOrder": 3,
+        "created_at": "2025-12-27T13:32:08.000Z"
+      },
+      {
+        "id": 4,
+        "name": "credito",
+        "displayName": "Crédito",
+        "isActive": true,
+        "sortOrder": 4,
+        "created_at": "2025-12-27T13:32:08.000Z"
+      }
+    ]
+  }
+}

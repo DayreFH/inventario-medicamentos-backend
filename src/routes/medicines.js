@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
 
     // Consultas en paralelo: datos + conteo total
     const [data, total] = await Promise.all([
-      prisma.medicine.findMany({
+      prisma.Medicine.findMany({
         where,
         include: {
           precios: { 
@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
         skip: skip,
         take: limit
       }),
-      prisma.medicine.count({ where })
+      prisma.Medicine.count({ where })
     ]);
 
     res.json({
@@ -87,7 +87,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const med = await prisma.medicine.findUnique({ 
+    const med = await prisma.Medicine.findUnique({ 
       where: { id },
       include: {
         precios: { 
@@ -128,7 +128,7 @@ router.post('/', async (req, res) => {
   } = req.body;
   
   try {
-    const med = await prisma.medicine.create({
+    const med = await prisma.Medicine.create({
       data: {
         codigo: String(codigo ?? '').trim(),
         nombreComercial: String(nombreComercial ?? '').trim(),
@@ -170,7 +170,7 @@ router.put('/:id', async (req, res) => {
   } = req.body;
 
   try {
-    const med = await prisma.medicine.update({
+    const med = await prisma.Medicine.update({
       where: { id },
       data: {
         ...(codigo !== undefined ? { codigo: String(codigo).trim() } : {}),
@@ -212,12 +212,12 @@ router.post('/:id/precios', async (req, res) => {
       ...(supplierId ? { supplierId: Number(supplierId) } : { supplierId: null })
     };
     
-    await prisma.medicinePrice.updateMany({
+    await prisma.MedicinePrice.updateMany({
       where: whereClause,
       data: { activo: false }
     });
     
-    const precio = await prisma.medicinePrice.create({
+    const precio = await prisma.MedicinePrice.create({
       data: {
         medicineId: id,
         supplierId: supplierId ? Number(supplierId) : null,
@@ -250,7 +250,7 @@ router.put('/:id/parametros', async (req, res) => {
   const { stockMinimo, alertaCaducidad, tiempoSinMovimiento } = req.body;
   
   try {
-    const param = await prisma.medicineParam.upsert({
+    const param = await prisma.MedicineParam.upsert({
       where: { medicineId: id },
       update: {
         stockMinimo: Number(stockMinimo) || 10,
@@ -277,7 +277,7 @@ router.put('/:id/parametros', async (req, res) => {
 router.delete('/precios/:precioId', async (req, res) => {
   const precioId = Number(req.params.precioId);
   try {
-    await prisma.medicinePrice.update({
+    await prisma.MedicinePrice.update({
       where: { id: precioId },
       data: { activo: false }
     });
@@ -294,7 +294,7 @@ router.delete('/precios/:precioId', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id);
   try {
-    await prisma.medicine.delete({ where: { id } });
+    await prisma.Medicine.delete({ where: { id } });
     res.status(204).send();
   } catch (e) {
     if (e?.code === 'P2003') {

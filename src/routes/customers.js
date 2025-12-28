@@ -8,12 +8,17 @@ const router = Router();
  * Lista clientes, con búsqueda opcional por nombre (?q=texto)
  */
 router.get('/', async (req, res) => {
-  const q = req.query.q || '';
-  const data = await prisma.customer.findMany({
-    where: q ? { name: { contains: q } } : undefined,
-    orderBy: { name: 'asc' }
-  });
-  res.json(data);
+  try {
+    const q = req.query.q || '';
+    const data = await prisma.customer.findMany({
+      where: q ? { name: { contains: q } } : undefined,
+      orderBy: { name: 'asc' }
+    });
+    res.json(data);
+  } catch (error) {
+    console.error('Error al cargar clientes:', error);
+    res.status(500).json({ error: 'Error al cargar clientes', detail: error.message });
+  }
 });
 
 /**
