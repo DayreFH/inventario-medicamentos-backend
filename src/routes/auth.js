@@ -148,7 +148,8 @@ router.post('/login', async (req, res) => {
     const token = generateToken({ 
       userId: user.id, 
       email: user.email,
-      roles: user.roles 
+      roleId: user.roleId,
+      roleName: user.roles?.name || null
     });
     
     res.json({
