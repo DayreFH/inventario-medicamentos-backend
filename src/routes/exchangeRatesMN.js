@@ -5,6 +5,7 @@ const router = Router();
 
 /**
  * GET /api/exchange-rates-mn/current
+ * GET /api/exchange-rates-mn/latest (alias)
  * Obtener la tasa de cambio actual USD-MN
  */
 router.get('/current', async (req, res) => {
@@ -24,6 +25,41 @@ router.get('/current', async (req, res) => {
     res.json({
       fromCurrency: 'USD',
       toCurrency: 'MN',
+      rate: parseFloat(currentRate.sellRate), // AGREGADO: Para compatibilidad
+      buyRate: parseFloat(currentRate.buyRate),
+      sellRate: parseFloat(currentRate.sellRate),
+      source: currentRate.source,
+      date: currentRate.date,
+      isActive: currentRate.isActive
+    });
+  } catch (error) {
+    console.error('Error obteniendo tasa actual USD-MN:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor',
+      detail: error.message 
+    });
+  }
+});
+
+// Alias para /current
+router.get('/latest', async (req, res) => {
+  try {
+    const currentRate = await prisma.exchangeRateMN.findFirst({
+      where: { isActive: true },
+      orderBy: { date: 'desc' }
+    });
+
+    if (!currentRate) {
+      return res.status(404).json({
+        error: 'No se encontró tasa de cambio',
+        message: 'No hay tasa disponible para USD/MN'
+      });
+    }
+
+    res.json({
+      fromCurrency: 'USD',
+      toCurrency: 'MN',
+      rate: parseFloat(currentRate.sellRate), // Usar sellRate como rate principal
       buyRate: parseFloat(currentRate.buyRate),
       sellRate: parseFloat(currentRate.sellRate),
       source: currentRate.source,

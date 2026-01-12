@@ -31,55 +31,47 @@ function monthRange(ym) {
  * body: { customerId, date:"YYYY-MM-DD", paymentMethod?, notes?, items:[{medicineId, qty}] }
  */
 router.post('/', async (req, res) => {
-  const { customerId, date, paymentMethod, notes, items } = req.body;
+  const { customerId, date, paymentMethod, notes, items, tipoVenta } = req.body;
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Validar stock y obtener costos
-      const medicinesData = [];
+      // Validar stock
       for (const it of items) {
         const med = await tx.Medicine.findUnique({ 
-          where: { id: it.medicineId },
-          include: {
-            precios: {
-              orderBy: { created_at: 'desc' },
-              take: 1
-            }
-          }
+          where: { id: it.medicineId }
         });
         if (!med || med.stock < it.qty) {
           throw new Error(`Stock insuficiente para ${med?.nombreComercial ?? 'medicamento ' + it.medicineId}`);
         }
-        medicinesData.push({
-          medicineId: it.medicineId,
-          qty: it.qty,
-          costoUnitarioUsd: med.precios?.[0]?.precioCompraUnitario || 0
-        });
       }
 
+      // Crear venta
       const sale = await tx.sale.create({
         data: { 
           customerId, 
           date: new Date(`${date}T00:00:00`), 
           paymentMethod: paymentMethod ?? 'efectivo',
-          notes: notes ?? null 
+          notes: notes ?? null,
+          tipoVenta: tipoVenta || 'USD'
         }
       });
 
-      for (let i = 0; i < medicinesData.length; i++) {
-        const medData = medicinesData[i];
-        const itemData = items[i];
+      // Crear items y actualizar stock
+      for (const item of items) {
         await tx.saleitem.create({
           data: { 
             saleId: sale.id, 
-            medicineId: medData.medicineId, 
-            qty: medData.qty,
-            costo_unitario_usd: medData.costoUnitarioUsd,
-            precio_propuesto_usd: itemData.precioVentaPropuestoUSD || 0
+            medicineId: item.medicineId, 
+            qty: item.qty,
+            costo_unitario_usd: item.costo_unitario_usd || null,
+            precio_propuesto_usd: item.precio_propuesto_usd || null,
+            precio_venta_mn: item.precio_venta_mn || null,
+            precio_compra_dop: item.precio_compra_dop || null,
+            supplierId: item.supplierId || null
           }
         });
         await tx.Medicine.update({
-          where: { id: medData.medicineId },
-          data: { stock: { decrement: medData.qty } }
+          where: { id: item.medicineId },
+          data: { stock: { decrement: item.qty } }
         });
       }
       return sale;
@@ -260,6 +252,20 @@ router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id);
   try {
     await prisma.$transaction(async (tx) => {
+      // Verificar si la venta tiene factura
+      const sale = await tx.sale.findUnique({
+        where: { id },
+        include: { invoice: true }
+      });
+
+      if (!sale) {
+        throw new Error('Venta no encontrada');
+      }
+
+      if (sale.invoice) {
+        throw new Error('No se puede eliminar una venta que ya ha sido facturada');
+      }
+
       const items = await tx.saleitem.findMany({
         where: { saleId: id },
         select: { medicineId: true, qty: true }

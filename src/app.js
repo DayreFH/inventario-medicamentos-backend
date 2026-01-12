@@ -30,8 +30,7 @@ const app = express();
 // CONFIGURACIÓN DE SEGURIDAD
 // ============================================================
 
-// Confiar en el proxy de Railway (CRÍTICO para rate limiting)
-// Sin esto, Railway envía todas las peticiones con la misma IP y el rate limiter bloquea a todos
+// Confiar en el proxy (Railway, Vercel, etc.)
 app.set('trust proxy', 1);
 
 // CORS configurado correctamente
@@ -45,7 +44,7 @@ app.use(cors(corsOptions));
 // Rate limiting - Protección contra ataques de fuerza bruta
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 500, // máximo 500 peticiones por ventana (aumentado de 100)
+  max: 500, // máximo 500 peticiones por ventana (aumentado para desarrollo)
   message: {
     error: 'Demasiadas peticiones',
     message: 'Has excedido el límite de peticiones. Intenta de nuevo más tarde.'
@@ -57,7 +56,7 @@ const limiter = rateLimit({
 // Rate limiting más estricto para rutas de autenticación
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // máximo 5 intentos de login
+  max: 20, // máximo 20 intentos de login (aumentado de 5)
   message: {
     error: 'Demasiados intentos',
     message: 'Has excedido el límite de intentos de inicio de sesión. Intenta de nuevo en 15 minutos.'

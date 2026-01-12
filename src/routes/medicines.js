@@ -55,6 +55,9 @@ router.get('/', async (req, res) => {
               }
             }
           },
+          preciosVentaMN: {
+            orderBy: { created_at: 'desc' }
+          },
           parametros: true
         },
         orderBy: { nombreComercial: 'asc' },
@@ -91,7 +94,6 @@ router.get('/:id', async (req, res) => {
       where: { id },
       include: {
         precios: { 
-          where: { activo: true },
           include: {
             supplier: {
               select: {
@@ -99,7 +101,11 @@ router.get('/:id', async (req, res) => {
                 name: true
               }
             }
-          }
+          },
+          orderBy: { created_at: 'desc' }
+        },
+        preciosVentaMN: {
+          orderBy: { created_at: 'desc' }
         },
         parametros: true
       }
@@ -284,6 +290,110 @@ router.delete('/precios/:precioId', async (req, res) => {
     res.status(200).json({ message: 'Precio desactivado exitosamente' });
   } catch (e) {
     res.status(400).json({ error: 'No se pudo desactivar el precio', detail: e.message });
+  }
+});
+
+/**
+ * PUT /api/medicines/precios/:precioId/reactivar
+ * Reactiva un precio de compra DOP (NO desactiva otros)
+ */
+router.put('/precios/:precioId/reactivar', async (req, res) => {
+  const precioId = Number(req.params.precioId);
+  try {
+    const precio = await prisma.MedicinePrice.update({
+      where: { id: precioId },
+      data: { activo: true }
+    });
+    res.status(200).json({ message: 'Precio reactivado exitosamente', precio });
+  } catch (e) {
+    res.status(400).json({ error: 'No se pudo reactivar el precio', detail: e.message });
+  }
+});
+
+/**
+ * POST /api/medicines/:id/precios-venta-mn
+ * Agrega un precio de venta MN (desactiva otros precios MN activos)
+ */
+router.post('/:id/precios-venta-mn', async (req, res) => {
+  const id = Number(req.params.id);
+  const { precioVentaMN } = req.body;
+  
+  try {
+    // Desactivar todos los precios MN activos de este medicamento
+    await prisma.MedicinePriceVentaMN.updateMany({
+      where: { 
+        medicineId: id,
+        activo: true
+      },
+      data: { activo: false }
+    });
+    
+    // Crear el nuevo precio MN activo
+    const precio = await prisma.MedicinePriceVentaMN.create({
+      data: {
+        medicineId: id,
+        precioVentaMN: normPrice(precioVentaMN),
+        activo: true
+      }
+    });
+    
+    res.status(201).json(precio);
+  } catch (e) {
+    res.status(400).json({ error: 'No se pudo agregar el precio de venta MN', detail: e.message });
+  }
+});
+
+/**
+ * DELETE /api/medicines/precios-venta-mn/:precioId
+ * Desactiva un precio de venta MN
+ */
+router.delete('/precios-venta-mn/:precioId', async (req, res) => {
+  const precioId = Number(req.params.precioId);
+  try {
+    await prisma.MedicinePriceVentaMN.update({
+      where: { id: precioId },
+      data: { activo: false }
+    });
+    res.status(200).json({ message: 'Precio de venta MN desactivado exitosamente' });
+  } catch (e) {
+    res.status(400).json({ error: 'No se pudo desactivar el precio', detail: e.message });
+  }
+});
+
+/**
+ * PUT /api/medicines/precios-venta-mn/:precioId/reactivar
+ * Reactiva un precio de venta MN (desactiva otros activos)
+ */
+router.put('/precios-venta-mn/:precioId/reactivar', async (req, res) => {
+  const precioId = Number(req.params.precioId);
+  try {
+    // Obtener el precio a reactivar para saber el medicineId
+    const precioToReactivate = await prisma.MedicinePriceVentaMN.findUnique({
+      where: { id: precioId }
+    });
+    
+    if (!precioToReactivate) {
+      return res.status(404).json({ error: 'Precio no encontrado' });
+    }
+    
+    // Desactivar todos los precios MN activos de este medicamento
+    await prisma.MedicinePriceVentaMN.updateMany({
+      where: { 
+        medicineId: precioToReactivate.medicineId,
+        activo: true
+      },
+      data: { activo: false }
+    });
+    
+    // Reactivar el precio seleccionado
+    const precio = await prisma.MedicinePriceVentaMN.update({
+      where: { id: precioId },
+      data: { activo: true }
+    });
+    
+    res.status(200).json({ message: 'Precio de venta MN reactivado exitosamente', precio });
+  } catch (e) {
+    res.status(400).json({ error: 'No se pudo reactivar el precio', detail: e.message });
   }
 });
 

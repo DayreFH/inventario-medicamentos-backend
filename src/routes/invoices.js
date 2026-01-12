@@ -48,9 +48,10 @@ router.get('/pending-sales', async (req, res) => {
     
     console.log('[INVOICES] Ventas pendientes encontradas:', pendingSales.length);
 
-    // Paso 3: Transformar datos
+    // Paso 3: Transformar datos e incluir tipoVenta
     const transformedSales = pendingSales.map(sale => ({
       ...sale,
+      tipoVenta: sale.tipoVenta || 'USD', // Por defecto USD si no está definido
       items: sale.saleitem.map(item => ({
         ...item,
         medicine: item.medicines

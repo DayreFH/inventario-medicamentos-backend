@@ -5,9 +5,45 @@ const router = Router();
 
 /**
  * GET /api/shipping-rates/current
+ * GET /api/shipping-rates/latest (alias)
  * Obtener la tasa de envío actual
  */
 router.get('/current', async (req, res) => {
+  try {
+    const currentRate = await prisma.shippingRate.findFirst({
+      where: { isActive: true },
+      orderBy: { date: 'desc' }
+    });
+
+    if (!currentRate) {
+      return res.status(404).json({
+        error: 'No se encontró tasa de envío',
+        message: 'No hay tasas de envío configuradas'
+      });
+    }
+
+    res.json({
+      fromCurrency: 'USD',
+      toCurrency: 'DOP',
+      domesticRate: parseFloat(currentRate.domesticRate),
+      internationalRate: parseFloat(currentRate.internationalRate),
+      weight: parseFloat(currentRate.weight),
+      description: currentRate.description || '',
+      source: currentRate.source,
+      date: currentRate.date,
+      isActive: currentRate.isActive
+    });
+  } catch (error) {
+    console.error('Error obteniendo tasa actual de envío:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor',
+      detail: error.message 
+    });
+  }
+});
+
+// Alias para /current
+router.get('/latest', async (req, res) => {
   try {
     const currentRate = await prisma.shippingRate.findFirst({
       where: { isActive: true },
