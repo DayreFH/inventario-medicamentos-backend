@@ -91,18 +91,40 @@ router.get('/metrics', async (req, res) => {
     });
 
     let totalRevenueUSD = 0;
+    let totalRevenueMN = 0;
     let totalCostUSD = 0;
+    let totalCostMN = 0;
     let totalItemsSold = 0;
     const medicinesSold = {};
     const customerPurchases = {};
 
     for (const sale of sales) {
       for (const item of sale.saleitem) {
-        const revenue = Number(item.precio_propuesto_usd || 0) * item.qty;
-        const cost = Number(item.costo_unitario_usd || 0) * item.qty;
+        let revenueUSD = 0;
+        let revenueMN = 0;
+        let costUSD = 0;
+        let costMN = 0;
         
-        totalRevenueUSD += revenue;
-        totalCostUSD += cost;
+        if (sale.tipoVenta === 'USD') {
+          // Ventas en USD
+          revenueUSD = Number(item.precio_propuesto_usd || 0) * item.qty;
+          costUSD = Number(item.costo_unitario_usd || 0) * item.qty;
+          // Convertir a MN para totales
+          revenueMN = revenueUSD * mnRate;
+          costMN = costUSD * mnRate;
+        } else if (sale.tipoVenta === 'MN') {
+          // Ventas en MN
+          revenueMN = Number(item.precio_venta_mn || 0) * item.qty;
+          costMN = Number(item.costo_unitario_usd || 0) * item.qty * mnRate;
+          // Convertir a USD para totales
+          revenueUSD = revenueMN / mnRate;
+          costUSD = costMN / mnRate;
+        }
+        
+        totalRevenueUSD += revenueUSD;
+        totalRevenueMN += revenueMN;
+        totalCostUSD += costUSD;
+        totalCostMN += costMN;
         totalItemsSold += item.qty;
 
         // Acumular por medicamento
@@ -134,6 +156,7 @@ router.get('/metrics', async (req, res) => {
     }
 
     const totalProfitUSD = totalRevenueUSD - totalCostUSD;
+    const totalProfitMN = totalRevenueMN - totalCostMN;
     const profitMargin = totalRevenueUSD > 0 ? (totalProfitUSD / totalRevenueUSD) * 100 : 0;
 
     // ============================================================
@@ -152,16 +175,42 @@ router.get('/metrics', async (req, res) => {
     });
 
     let prevTotalRevenueUSD = 0;
+    let prevTotalRevenueMN = 0;
     let prevTotalCostUSD = 0;
+    let prevTotalCostMN = 0;
 
     for (const sale of prevSales) {
       for (const item of sale.saleitem) {
-        prevTotalRevenueUSD += Number(item.precio_propuesto_usd || 0) * item.qty;
-        prevTotalCostUSD += Number(item.costo_unitario_usd || 0) * item.qty;
+        let revenueUSD = 0;
+        let revenueMN = 0;
+        let costUSD = 0;
+        let costMN = 0;
+        
+        if (sale.tipoVenta === 'USD') {
+          // Ventas en USD
+          revenueUSD = Number(item.precio_propuesto_usd || 0) * item.qty;
+          costUSD = Number(item.costo_unitario_usd || 0) * item.qty;
+          // Convertir a MN
+          revenueMN = revenueUSD * mnRate;
+          costMN = costUSD * mnRate;
+        } else if (sale.tipoVenta === 'MN') {
+          // Ventas en MN
+          revenueMN = Number(item.precio_venta_mn || 0) * item.qty;
+          costMN = Number(item.costo_unitario_usd || 0) * item.qty * mnRate;
+          // Convertir a USD
+          revenueUSD = revenueMN / mnRate;
+          costUSD = costMN / mnRate;
+        }
+        
+        prevTotalRevenueUSD += revenueUSD;
+        prevTotalRevenueMN += revenueMN;
+        prevTotalCostUSD += costUSD;
+        prevTotalCostMN += costMN;
       }
     }
 
     const prevTotalProfitUSD = prevTotalRevenueUSD - prevTotalCostUSD;
+    const prevTotalProfitMN = prevTotalRevenueMN - prevTotalCostMN;
     const prevProfitMargin = prevTotalRevenueUSD > 0 ? (prevTotalProfitUSD / prevTotalRevenueUSD) * 100 : 0;
 
     // Calcular porcentajes de crecimiento
@@ -255,17 +304,29 @@ router.get('/metrics', async (req, res) => {
         }
       });
 
-      let dayRevenue = 0;
+      let dayRevenueUSD = 0;
+      let dayRevenueMN = 0;
+      
       for (const sale of daySales) {
         for (const item of sale.saleitem) {
-          dayRevenue += Number(item.precio_propuesto_usd || 0) * item.qty;
+          if (sale.tipoVenta === 'USD') {
+            // Ventas en USD
+            const revenueUSD = Number(item.precio_propuesto_usd || 0) * item.qty;
+            dayRevenueUSD += revenueUSD;
+            dayRevenueMN += revenueUSD * mnRate;
+          } else if (sale.tipoVenta === 'MN') {
+            // Ventas en MN
+            const revenueMN = Number(item.precio_venta_mn || 0) * item.qty;
+            dayRevenueMN += revenueMN;
+            dayRevenueUSD += revenueMN / mnRate;
+          }
         }
       }
 
       trendData.push({
         date: dayStart.toISOString().split('T')[0],
-        revenueUSD: dayRevenue,
-        revenueMN: dayRevenue * mnRate
+        revenueUSD: dayRevenueUSD,
+        revenueMN: dayRevenueMN
       });
     }
 
@@ -280,18 +341,18 @@ router.get('/metrics', async (req, res) => {
       },
       sales: {
         totalUSD: totalRevenueUSD,
-        totalMN: totalRevenueUSD * mnRate,
+        totalMN: totalRevenueMN,
         count: sales.length,
         growthPercent: revenueGrowth
       },
       costs: {
         totalUSD: totalCostUSD,
-        totalMN: totalCostUSD * mnRate,
+        totalMN: totalCostMN,
         growthPercent: costGrowth
       },
       profit: {
         totalUSD: totalProfitUSD,
-        totalMN: totalProfitUSD * mnRate,
+        totalMN: totalProfitMN,
         growthPercent: profitGrowth
       },
       profitMargin: {
