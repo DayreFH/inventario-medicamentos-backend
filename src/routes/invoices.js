@@ -300,6 +300,7 @@ router.get('/reports', async (req, res) => {
     // CALCULAR MÉTRICAS
     // ============================================================
     
+    // Métricas generales (RETROCOMPATIBILIDAD)
     let totalFacturado = 0;
     let totalAnulado = 0;
     let facturasEmitidas = 0;
@@ -316,12 +317,41 @@ router.get('/reports', async (req, res) => {
     };
     const facturasPorDia = {};
 
+    // Métricas separadas por tipo de venta (NUEVAS)
+    const metricsUSD = {
+      totalFacturado: 0,
+      totalAnulado: 0,
+      facturasEmitidas: 0,
+      facturasAnuladas: 0,
+      totalITBIS: 0,
+      totalDescuentos: 0
+    };
+    const metricsMN = {
+      totalFacturado: 0,
+      totalAnulado: 0,
+      facturasEmitidas: 0,
+      facturasAnuladas: 0,
+      totalITBIS: 0,
+      totalDescuentos: 0
+    };
+    const porFormaPagoUSD = { efectivo: 0, tarjeta: 0, transferencia: 0, credito: 0 };
+    const porFormaPagoMN = { efectivo: 0, tarjeta: 0, transferencia: 0, credito: 0 };
+    const facturasPorDiaUSD = {};
+    const facturasPorDiaMN = {};
+    const clientesMapUSD = {};
+    const clientesMapMN = {};
+
     for (const invoice of filteredInvoices) {
       const total = Number(invoice.total) || 0;
       const itbisAmount = Number(invoice.itbisAmount) || 0;
       const discountAmount = Number(invoice.discountAmount) || 0;
       const isEmitida = invoice.status === 'emitida';
+      const tipoVenta = invoice.sale?.tipoVenta || 'USD'; // Default USD si no existe
 
+      // ============================================================
+      // MÉTRICAS GENERALES (RETROCOMPATIBILIDAD)
+      // ============================================================
+      
       // Totales
       if (isEmitida) {
         totalFacturado += total;
@@ -379,9 +409,74 @@ router.get('/reports', async (req, res) => {
         facturasPorDia[fecha].cantidad++;
         facturasPorDia[fecha].monto += total;
       }
+
+      // ============================================================
+      // MÉTRICAS SEPARADAS POR TIPO DE VENTA (NUEVAS)
+      // ============================================================
+      
+      const metrics = tipoVenta === 'USD' ? metricsUSD : metricsMN;
+      const porFormaPagoByType = tipoVenta === 'USD' ? porFormaPagoUSD : porFormaPagoMN;
+      const facturasPorDiaByType = tipoVenta === 'USD' ? facturasPorDiaUSD : facturasPorDiaMN;
+      const clientesMapByType = tipoVenta === 'USD' ? clientesMapUSD : clientesMapMN;
+
+      // Totales por tipo
+      if (isEmitida) {
+        metrics.totalFacturado += total;
+        metrics.facturasEmitidas++;
+      } else {
+        metrics.totalAnulado += total;
+        metrics.facturasAnuladas++;
+      }
+
+      // ITBIS y Descuentos por tipo (solo emitidas)
+      if (isEmitida) {
+        metrics.totalITBIS += itbisAmount;
+        metrics.totalDescuentos += discountAmount;
+      }
+
+      // Por cliente por tipo
+      if (invoice.sale?.customer && isEmitida) {
+        const custId = invoice.sale.customerId;
+        if (!clientesMapByType[custId]) {
+          clientesMapByType[custId] = {
+            id: custId,
+            name: invoice.sale.customer.name,
+            rnc: invoice.sale.customer.rnc || 'N/A',
+            totalFacturado: 0,
+            cantidadFacturas: 0
+          };
+        }
+        clientesMapByType[custId].totalFacturado += total;
+        clientesMapByType[custId].cantidadFacturas++;
+      }
+
+      // Por forma de pago por tipo (solo emitidas)
+      if (isEmitida && invoice.sale?.paymentMethod) {
+        const method = invoice.sale.paymentMethod.toLowerCase();
+        if (porFormaPagoByType.hasOwnProperty(method)) {
+          porFormaPagoByType[method] += total;
+        }
+      }
+
+      // Por día por tipo
+      if (!facturasPorDiaByType[fecha]) {
+        facturasPorDiaByType[fecha] = {
+          fecha,
+          cantidad: 0,
+          monto: 0
+        };
+      }
+      if (isEmitida) {
+        facturasPorDiaByType[fecha].cantidad++;
+        facturasPorDiaByType[fecha].monto += total;
+      }
     }
 
-    // Calcular promedios
+    // ============================================================
+    // CALCULAR PROMEDIOS Y PREPARAR DATOS
+    // ============================================================
+    
+    // Promedios generales (RETROCOMPATIBILIDAD)
     const promedioFactura = facturasEmitidas > 0 ? totalFacturado / facturasEmitidas : 0;
     const promedioITBIS = facturasEmitidas > 0 ? totalITBIS / facturasEmitidas : 0;
     const promedioDescuento = facturasEmitidas > 0 ? totalDescuentos / facturasEmitidas : 0;
@@ -389,13 +484,42 @@ router.get('/reports', async (req, res) => {
       ? (facturasAnuladas / (facturasEmitidas + facturasAnuladas)) * 100 
       : 0;
 
-    // Top 10 clientes
+    // Promedios por tipo de venta (NUEVOS)
+    metricsUSD.promedioFactura = metricsUSD.facturasEmitidas > 0 ? metricsUSD.totalFacturado / metricsUSD.facturasEmitidas : 0;
+    metricsUSD.promedioITBIS = metricsUSD.facturasEmitidas > 0 ? metricsUSD.totalITBIS / metricsUSD.facturasEmitidas : 0;
+    metricsUSD.promedioDescuento = metricsUSD.facturasEmitidas > 0 ? metricsUSD.totalDescuentos / metricsUSD.facturasEmitidas : 0;
+    metricsUSD.tasaAnulacion = (metricsUSD.facturasEmitidas + metricsUSD.facturasAnuladas) > 0 
+      ? (metricsUSD.facturasAnuladas / (metricsUSD.facturasEmitidas + metricsUSD.facturasAnuladas)) * 100 
+      : 0;
+
+    metricsMN.promedioFactura = metricsMN.facturasEmitidas > 0 ? metricsMN.totalFacturado / metricsMN.facturasEmitidas : 0;
+    metricsMN.promedioITBIS = metricsMN.facturasEmitidas > 0 ? metricsMN.totalITBIS / metricsMN.facturasEmitidas : 0;
+    metricsMN.promedioDescuento = metricsMN.facturasEmitidas > 0 ? metricsMN.totalDescuentos / metricsMN.facturasEmitidas : 0;
+    metricsMN.tasaAnulacion = (metricsMN.facturasEmitidas + metricsMN.facturasAnuladas) > 0 
+      ? (metricsMN.facturasAnuladas / (metricsMN.facturasEmitidas + metricsMN.facturasAnuladas)) * 100 
+      : 0;
+
+    // Top 10 clientes (general y por tipo)
     const topClientes = Object.values(clientesMap)
       .sort((a, b) => b.totalFacturado - a.totalFacturado)
       .slice(0, 10);
+    
+    const topClientesUSD = Object.values(clientesMapUSD)
+      .sort((a, b) => b.totalFacturado - a.totalFacturado)
+      .slice(0, 10);
+    
+    const topClientesMN = Object.values(clientesMapMN)
+      .sort((a, b) => b.totalFacturado - a.totalFacturado)
+      .slice(0, 10);
 
-    // Facturas por día (ordenadas)
+    // Facturas por día (general y por tipo)
     const facturasPorDiaArray = Object.values(facturasPorDia)
+      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    
+    const facturasPorDiaArrayUSD = Object.values(facturasPorDiaUSD)
+      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    
+    const facturasPorDiaArrayMN = Object.values(facturasPorDiaMN)
       .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
     // Rango de NCF
@@ -419,13 +543,15 @@ router.get('/reports', async (req, res) => {
       discountAmount: Number(inv.discountAmount) || 0,
       total: Number(inv.total) || 0,
       status: inv.status,
-      paymentMethod: inv.sale?.paymentMethod || 'N/A'
+      paymentMethod: inv.sale?.paymentMethod || 'N/A',
+      tipoVenta: inv.sale?.tipoVenta || 'USD' // NUEVO: Agregar tipo de venta
     }));
 
     // ============================================================
     // RESPUESTA
     // ============================================================
     res.json({
+      // ESTRUCTURA ANTIGUA (RETROCOMPATIBILIDAD)
       summary: {
         totalFacturado,
         totalAnulado,
@@ -444,7 +570,39 @@ router.get('/reports', async (req, res) => {
       porFormaPago,
       topClientes,
       facturasPorDia: facturasPorDiaArray,
-      detalleFacturas
+      detalleFacturas,
+
+      // ESTRUCTURA NUEVA (SEPARADA POR TIPO DE VENTA)
+      summaryUSD: {
+        totalFacturado: metricsUSD.totalFacturado,
+        totalAnulado: metricsUSD.totalAnulado,
+        facturasEmitidas: metricsUSD.facturasEmitidas,
+        facturasAnuladas: metricsUSD.facturasAnuladas,
+        promedioFactura: metricsUSD.promedioFactura,
+        totalITBIS: metricsUSD.totalITBIS,
+        totalDescuentos: metricsUSD.totalDescuentos,
+        promedioITBIS: metricsUSD.promedioITBIS,
+        promedioDescuento: metricsUSD.promedioDescuento,
+        tasaAnulacion: metricsUSD.tasaAnulacion
+      },
+      summaryMN: {
+        totalFacturado: metricsMN.totalFacturado,
+        totalAnulado: metricsMN.totalAnulado,
+        facturasEmitidas: metricsMN.facturasEmitidas,
+        facturasAnuladas: metricsMN.facturasAnuladas,
+        promedioFactura: metricsMN.promedioFactura,
+        totalITBIS: metricsMN.totalITBIS,
+        totalDescuentos: metricsMN.totalDescuentos,
+        promedioITBIS: metricsMN.promedioITBIS,
+        promedioDescuento: metricsMN.promedioDescuento,
+        tasaAnulacion: metricsMN.tasaAnulacion
+      },
+      porFormaPagoUSD,
+      porFormaPagoMN,
+      topClientesUSD,
+      topClientesMN,
+      facturasPorDiaUSD: facturasPorDiaArrayUSD,
+      facturasPorDiaMN: facturasPorDiaArrayMN
     });
 
   } catch (error) {
