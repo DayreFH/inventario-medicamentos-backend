@@ -112,9 +112,18 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Calcular totales
+    // Calcular totales según el tipo de venta
     const subtotal = sale.saleitem.reduce((sum, item) => {
-      const precio = Number(item.precio_propuesto_usd) || 0;
+      let precio = 0;
+      
+      // Usar el campo correcto según el tipo de venta
+      if (sale.tipoVenta === 'MN') {
+        precio = Number(item.precio_venta_mn) || 0;
+      } else {
+        // USD o sin especificar (default USD)
+        precio = Number(item.precio_propuesto_usd) || 0;
+      }
+      
       const cantidad = Number(item.qty) || 0;
       return sum + (precio * cantidad);
     }, 0);
