@@ -9,7 +9,7 @@ const execPromise = promisify(exec);
 async function initializeServer() {
   try {
     console.log('🔄 Regenerando Prisma Client...');
-    await execPromise('npx prisma generate --force');
+    await execPromise('npx prisma generate');
     console.log('✅ Prisma Client regenerado exitosamente');
     
     const app = (await import('./app.js')).default;
