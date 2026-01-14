@@ -489,13 +489,18 @@ router.get('/monthly-invoicing', async (req, res) => {
         discount: true,
         discountAmount: true,
         total: true,
-        createdAt: true
+        createdAt: true,
+        sale: {
+          select: {
+            tipoVenta: true
+          }
+        }
       }
     });
 
     console.log(`📦 Facturas encontradas: ${invoices.length}`);
 
-    // Agrupar por mes
+    // Agrupar por mes con separación de monedas
     const monthlyData = Array.from({ length: 12 }, (_, i) => ({
       month: i + 1,
       monthName: new Date(targetYear, i, 1).toLocaleString('es', { month: 'long' }),
@@ -503,29 +508,73 @@ router.get('/monthly-invoicing', async (req, res) => {
       subtotal: 0,
       itbisAmount: 0,
       discountAmount: 0,
-      total: 0
+      total: 0,
+      // Separación por moneda
+      invoiceCountUSD: 0,
+      subtotalUSD: 0,
+      itbisAmountUSD: 0,
+      discountAmountUSD: 0,
+      totalUSD: 0,
+      invoiceCountMN: 0,
+      subtotalMN: 0,
+      itbisAmountMN: 0,
+      discountAmountMN: 0,
+      totalMN: 0
     }));
 
-    // Sumar valores por mes
+    // Sumar valores por mes separando por moneda
     for (const invoice of invoices) {
       const month = new Date(invoice.createdAt).getMonth(); // 0-11
+      const tipoVenta = invoice.sale?.tipoVenta || 'USD';
+      const subtotal = Number(invoice.subtotal) || 0;
+      const itbisAmount = Number(invoice.itbisAmount) || 0;
+      const discountAmount = Number(invoice.discountAmount) || 0;
+      const total = Number(invoice.total) || 0;
+
+      // Totales generales (retrocompatibilidad)
       monthlyData[month].invoiceCount += 1;
-      monthlyData[month].subtotal += Number(invoice.subtotal) || 0;
-      monthlyData[month].itbisAmount += Number(invoice.itbisAmount) || 0;
-      monthlyData[month].discountAmount += Number(invoice.discountAmount) || 0;
-      monthlyData[month].total += Number(invoice.total) || 0;
+      monthlyData[month].subtotal += subtotal;
+      monthlyData[month].itbisAmount += itbisAmount;
+      monthlyData[month].discountAmount += discountAmount;
+      monthlyData[month].total += total;
+
+      // Separar por moneda
+      if (tipoVenta === 'USD') {
+        monthlyData[month].invoiceCountUSD += 1;
+        monthlyData[month].subtotalUSD += subtotal;
+        monthlyData[month].itbisAmountUSD += itbisAmount;
+        monthlyData[month].discountAmountUSD += discountAmount;
+        monthlyData[month].totalUSD += total;
+      } else if (tipoVenta === 'MN') {
+        monthlyData[month].invoiceCountMN += 1;
+        monthlyData[month].subtotalMN += subtotal;
+        monthlyData[month].itbisAmountMN += itbisAmount;
+        monthlyData[month].discountAmountMN += discountAmount;
+        monthlyData[month].totalMN += total;
+      }
     }
 
-    // Calcular totales del año
+    // Calcular totales del año (con separación de monedas)
     const yearTotal = {
       invoiceCount: invoices.length,
       subtotal: monthlyData.reduce((sum, m) => sum + m.subtotal, 0),
       itbisAmount: monthlyData.reduce((sum, m) => sum + m.itbisAmount, 0),
       discountAmount: monthlyData.reduce((sum, m) => sum + m.discountAmount, 0),
-      total: monthlyData.reduce((sum, m) => sum + m.total, 0)
+      total: monthlyData.reduce((sum, m) => sum + m.total, 0),
+      // Totales por moneda
+      invoiceCountUSD: monthlyData.reduce((sum, m) => sum + m.invoiceCountUSD, 0),
+      subtotalUSD: monthlyData.reduce((sum, m) => sum + m.subtotalUSD, 0),
+      itbisAmountUSD: monthlyData.reduce((sum, m) => sum + m.itbisAmountUSD, 0),
+      discountAmountUSD: monthlyData.reduce((sum, m) => sum + m.discountAmountUSD, 0),
+      totalUSD: monthlyData.reduce((sum, m) => sum + m.totalUSD, 0),
+      invoiceCountMN: monthlyData.reduce((sum, m) => sum + m.invoiceCountMN, 0),
+      subtotalMN: monthlyData.reduce((sum, m) => sum + m.subtotalMN, 0),
+      itbisAmountMN: monthlyData.reduce((sum, m) => sum + m.itbisAmountMN, 0),
+      discountAmountMN: monthlyData.reduce((sum, m) => sum + m.discountAmountMN, 0),
+      totalMN: monthlyData.reduce((sum, m) => sum + m.totalMN, 0)
     };
 
-    // Comparación con año anterior (opcional)
+    // Comparación con año anterior (con separación de monedas)
     const previousYear = targetYear - 1;
     const prevStartDate = new Date(previousYear, 0, 1);
     const prevEndDate = new Date(previousYear, 11, 31, 23, 59, 59, 999);
@@ -539,13 +588,42 @@ router.get('/monthly-invoicing', async (req, res) => {
         status: 'emitida'
       },
       select: {
-        total: true
+        total: true,
+        sale: {
+          select: {
+            tipoVenta: true
+          }
+        }
       }
     });
 
-    const previousYearTotal = previousYearInvoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
+    let previousYearTotal = 0;
+    let previousYearTotalUSD = 0;
+    let previousYearTotalMN = 0;
+
+    for (const inv of previousYearInvoices) {
+      const total = Number(inv.total) || 0;
+      const tipoVenta = inv.sale?.tipoVenta || 'USD';
+      
+      previousYearTotal += total;
+      
+      if (tipoVenta === 'USD') {
+        previousYearTotalUSD += total;
+      } else if (tipoVenta === 'MN') {
+        previousYearTotalMN += total;
+      }
+    }
+
     const growthPercentage = previousYearTotal > 0 
       ? ((yearTotal.total - previousYearTotal) / previousYearTotal * 100).toFixed(2)
+      : 0;
+
+    const growthPercentageUSD = previousYearTotalUSD > 0 
+      ? ((yearTotal.totalUSD - previousYearTotalUSD) / previousYearTotalUSD * 100).toFixed(2)
+      : 0;
+
+    const growthPercentageMN = previousYearTotalMN > 0 
+      ? ((yearTotal.totalMN - previousYearTotalMN) / previousYearTotalMN * 100).toFixed(2)
       : 0;
 
     res.json({
@@ -555,7 +633,12 @@ router.get('/monthly-invoicing', async (req, res) => {
       comparison: {
         previousYear,
         previousYearTotal: Number(previousYearTotal.toFixed(2)),
-        growthPercentage: Number(growthPercentage)
+        growthPercentage: Number(growthPercentage),
+        // Comparación por moneda
+        previousYearTotalUSD: Number(previousYearTotalUSD.toFixed(2)),
+        previousYearTotalMN: Number(previousYearTotalMN.toFixed(2)),
+        growthPercentageUSD: Number(growthPercentageUSD),
+        growthPercentageMN: Number(growthPercentageMN)
       }
     });
 
@@ -587,16 +670,23 @@ router.get('/comparative-analysis', async (req, res) => {
     console.log(`  Período 1: ${period1Start} - ${period1End}`);
     console.log(`  Período 2: ${period2Start} - ${period2End}`);
 
-    // Función helper para obtener datos de un período
+    // Función helper para obtener datos de un período (con separación de monedas)
     const getPeriodData = async (startDate, endDate) => {
       const start = new Date(`${startDate}T00:00:00`);
       const end = new Date(`${endDate}T23:59:59.999`);
 
-      // Facturas del período
+      // Facturas del período (incluir tipoVenta)
       const invoices = await prisma.invoice.findMany({
         where: {
           createdAt: { gte: start, lte: end },
           status: 'emitida'
+        },
+        include: {
+          sale: {
+            select: {
+              tipoVenta: true
+            }
+          }
         }
       });
 
@@ -623,10 +713,41 @@ router.get('/comparative-analysis', async (req, res) => {
       // Clientes únicos
       const uniqueCustomers = new Set(sales.map(s => s.customerId)).size;
 
-      // Calcular totales
-      const totalInvoiced = invoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
-      const totalITBIS = invoices.reduce((sum, inv) => sum + (Number(inv.itbisAmount) || 0), 0);
-      const totalDiscount = invoices.reduce((sum, inv) => sum + (Number(inv.discountAmount) || 0), 0);
+      // Calcular totales separando por moneda
+      let totalInvoiced = 0;
+      let totalInvoicedUSD = 0;
+      let totalInvoicedMN = 0;
+      let totalITBIS = 0;
+      let totalITBISUSD = 0;
+      let totalITBISMN = 0;
+      let totalDiscount = 0;
+      let totalDiscountUSD = 0;
+      let totalDiscountMN = 0;
+
+      for (const inv of invoices) {
+        const total = Number(inv.total) || 0;
+        const itbis = Number(inv.itbisAmount) || 0;
+        const discount = Number(inv.discountAmount) || 0;
+        const tipoVenta = inv.sale?.tipoVenta || 'USD';
+
+        totalInvoiced += total;
+        totalITBIS += itbis;
+        totalDiscount += discount;
+
+        if (tipoVenta === 'USD') {
+          totalInvoicedUSD += total;
+          totalITBISUSD += itbis;
+          totalDiscountUSD += discount;
+        } else if (tipoVenta === 'MN') {
+          totalInvoicedMN += total;
+          totalITBISMN += itbis;
+          totalDiscountMN += discount;
+        }
+      }
+
+      // Separar ventas por moneda
+      const salesUSD = sales.filter(s => s.tipoVenta === 'USD');
+      const salesMN = sales.filter(s => s.tipoVenta === 'MN');
 
       const totalSalesQty = sales.reduce((sum, sale) => {
         return sum + sale.saleitem.reduce((s, item) => s + (item.qty || 0), 0);
@@ -645,11 +766,23 @@ router.get('/comparative-analysis', async (req, res) => {
           count: invoices.length,
           total: Number(totalInvoiced.toFixed(2)),
           itbis: Number(totalITBIS.toFixed(2)),
-          discount: Number(totalDiscount.toFixed(2))
+          discount: Number(totalDiscount.toFixed(2)),
+          // Separación por moneda
+          countUSD: invoices.filter(inv => inv.sale?.tipoVenta === 'USD').length,
+          countMN: invoices.filter(inv => inv.sale?.tipoVenta === 'MN').length,
+          totalUSD: Number(totalInvoicedUSD.toFixed(2)),
+          totalMN: Number(totalInvoicedMN.toFixed(2)),
+          itbisUSD: Number(totalITBISUSD.toFixed(2)),
+          itbisMN: Number(totalITBISMN.toFixed(2)),
+          discountUSD: Number(totalDiscountUSD.toFixed(2)),
+          discountMN: Number(totalDiscountMN.toFixed(2))
         },
         sales: {
           count: sales.length,
-          totalQty: totalSalesQty
+          totalQty: totalSalesQty,
+          // Separación por moneda
+          countUSD: salesUSD.length,
+          countMN: salesMN.length
         },
         purchases: {
           count: receipts.length,
@@ -682,11 +815,17 @@ router.get('/comparative-analysis', async (req, res) => {
     const comparison = {
       invoices: {
         count: calculateComparison(period1Data.invoices.count, period2Data.invoices.count),
-        total: calculateComparison(period1Data.invoices.total, period2Data.invoices.total)
+        total: calculateComparison(period1Data.invoices.total, period2Data.invoices.total),
+        // Comparación por moneda
+        totalUSD: calculateComparison(period1Data.invoices.totalUSD, period2Data.invoices.totalUSD),
+        totalMN: calculateComparison(period1Data.invoices.totalMN, period2Data.invoices.totalMN)
       },
       sales: {
         count: calculateComparison(period1Data.sales.count, period2Data.sales.count),
-        totalQty: calculateComparison(period1Data.sales.totalQty, period2Data.sales.totalQty)
+        totalQty: calculateComparison(period1Data.sales.totalQty, period2Data.sales.totalQty),
+        // Comparación por moneda
+        countUSD: calculateComparison(period1Data.sales.countUSD, period2Data.sales.countUSD),
+        countMN: calculateComparison(period1Data.sales.countMN, period2Data.sales.countMN)
       },
       purchases: {
         count: calculateComparison(period1Data.purchases.count, period2Data.purchases.count),
@@ -827,9 +966,29 @@ router.get('/sales-items-by-period', async (req, res) => {
       include: { customer: true, saleitem: { include: { medicines: true } } },
       orderBy: { date: 'asc' }
     });
+
+    // Obtener tasa de cambio para conversiones
+    const exchangeRate = await prisma.ExchangeRateMN.findFirst({
+      where: { isActive: true },
+      orderBy: { date: 'desc' }
+    });
+    const mnRate = exchangeRate ? Number(exchangeRate.sellRate) : 50;
+
     const rows = [];
     for (const s of sales) {
+      const tipoVenta = s.tipoVenta || 'USD';
+      
       for (const it of s.saleitem) {
+        let priceUSD = 0, priceMN = 0;
+        
+        if (tipoVenta === 'USD') {
+          priceUSD = Number(it.precio_propuesto_usd || 0);
+          priceMN = priceUSD * mnRate;
+        } else if (tipoVenta === 'MN') {
+          priceMN = Number(it.precio_venta_mn || 0);
+          priceUSD = priceMN / mnRate;
+        }
+
         rows.push({
           id: it.id,
           date: s.date,
@@ -838,6 +997,9 @@ router.get('/sales-items-by-period', async (req, res) => {
           medicineCode: it.medicines?.codigo,
           medicineName: it.medicines?.nombreComercial,
           qty: it.qty,
+          priceUSD: Number(priceUSD.toFixed(2)),
+          priceMN: Number(priceMN.toFixed(2)),
+          tipoVenta: tipoVenta,
           expirationDate: minExpiryByMed.get(it.medicineId) || null
         });
       }

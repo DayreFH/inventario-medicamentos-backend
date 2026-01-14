@@ -53,46 +53,67 @@ router.get('/summary', async (req, res) => {
         sale: {
           select: {
             id: true,
-            date: true
+            date: true,
+            tipoVenta: true
           }
         }
       }
     });
 
-    // Calcular métricas
-    let totalRevenue = 0;
-    let totalCost = 0;
+    // Obtener tasa de cambio
+    const exchangeRate = await getExchangeRate();
+
+    // Calcular métricas separadas por moneda
+    let totalRevenueUSD = 0;
+    let totalRevenueMN = 0;
+    let totalCostUSD = 0;
+    let totalCostMN = 0;
     const uniqueSales = new Set();
     let totalItemsSold = 0;
 
     for (const item of saleitems) {
-      const cost = Number(item.costo_unitario_usd || 0);
-      const price = Number(item.precio_propuesto_usd || 0);
       const qty = Number(item.qty || 0);
-
-      totalCost += cost * qty;
-      totalRevenue += price * qty;
+      const tipoVenta = item.sale?.tipoVenta || 'USD';
+      
+      let revenueUSD = 0, revenueMN = 0;
+      let costUSD = 0, costMN = 0;
+      
+      if (tipoVenta === 'USD') {
+        // Venta en USD: usar precio_propuesto_usd
+        revenueUSD = Number(item.precio_propuesto_usd || 0) * qty;
+        costUSD = Number(item.costo_unitario_usd || 0) * qty;
+        // Convertir a MN
+        revenueMN = revenueUSD * exchangeRate;
+        costMN = costUSD * exchangeRate;
+      } else if (tipoVenta === 'MN') {
+        // Venta en MN: usar precio_venta_mn
+        revenueMN = Number(item.precio_venta_mn || 0) * qty;
+        costMN = Number(item.costo_unitario_usd || 0) * qty * exchangeRate;
+        // Convertir a USD
+        revenueUSD = revenueMN / exchangeRate;
+        costUSD = costMN / exchangeRate;
+      }
+      
+      totalRevenueUSD += revenueUSD;
+      totalRevenueMN += revenueMN;
+      totalCostUSD += costUSD;
+      totalCostMN += costMN;
       totalItemsSold += qty;
       uniqueSales.add(item.saleId);
     }
 
-    const totalProfit = totalRevenue - totalCost;
-    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-
-    // Obtener tasa de cambio y convertir a MN
-    const exchangeRate = await getExchangeRate();
-    const totalRevenueMN = totalRevenue * exchangeRate;
-    const totalCostMN = totalCost * exchangeRate;
-    const totalProfitMN = totalProfit * exchangeRate;
+    const totalProfitUSD = totalRevenueUSD - totalCostUSD;
+    const totalProfitMN = totalRevenueMN - totalCostMN;
+    const profitMargin = totalRevenueUSD > 0 ? (totalProfitUSD / totalRevenueUSD) * 100 : 0;
 
     res.json({
-      totalRevenue: Number(totalRevenue.toFixed(2)),
-      totalCost: Number(totalCost.toFixed(2)),
-      totalProfit: Number(totalProfit.toFixed(2)),
+      totalRevenue: Number(totalRevenueUSD.toFixed(2)),
+      totalCost: Number(totalCostUSD.toFixed(2)),
+      totalProfit: Number(totalProfitUSD.toFixed(2)),
       profitMargin: Number(profitMargin.toFixed(2)),
       totalSales: uniqueSales.size,
       totalItemsSold,
-      // Valores en MN
+      // Valores en MN (reales, no conversiones)
       totalRevenueMN: Number(totalRevenueMN.toFixed(2)),
       totalCostMN: Number(totalCostMN.toFixed(2)),
       totalProfitMN: Number(totalProfitMN.toFixed(2)),
@@ -141,20 +162,23 @@ router.get('/by-medicine', async (req, res) => {
         },
         sale: {
           select: {
-            date: true
+            date: true,
+            tipoVenta: true
           }
         }
       }
     });
+
+    // Obtener tasa de cambio
+    const exchangeRate = await getExchangeRate();
 
     // Agrupar por medicamento
     const medicineMap = new Map();
 
     for (const item of saleitems) {
       const medId = item.medicineId;
-      const cost = Number(item.costo_unitario_usd || 0);
-      const price = Number(item.precio_propuesto_usd || 0);
       const qty = Number(item.qty || 0);
+      const tipoVenta = item.sale?.tipoVenta || 'USD';
 
       if (!medicineMap.has(medId)) {
         medicineMap.set(medId, {
@@ -162,48 +186,61 @@ router.get('/by-medicine', async (req, res) => {
           medicineCode: item.medicines?.codigo || 'N/A',
           medicineName: item.medicines?.nombreComercial || 'Desconocido',
           quantitySold: 0,
-          totalCost: 0,
-          totalRevenue: 0
+          totalCostUSD: 0,
+          totalCostMN: 0,
+          totalRevenueUSD: 0,
+          totalRevenueMN: 0
         });
       }
 
       const med = medicineMap.get(medId);
       med.quantitySold += qty;
-      med.totalCost += cost * qty;
-      med.totalRevenue += price * qty;
-    }
 
-    // Obtener tasa de cambio
-    const exchangeRate = await getExchangeRate();
+      let revenueUSD = 0, revenueMN = 0;
+      let costUSD = 0, costMN = 0;
+      
+      if (tipoVenta === 'USD') {
+        revenueUSD = Number(item.precio_propuesto_usd || 0) * qty;
+        costUSD = Number(item.costo_unitario_usd || 0) * qty;
+        revenueMN = revenueUSD * exchangeRate;
+        costMN = costUSD * exchangeRate;
+      } else if (tipoVenta === 'MN') {
+        revenueMN = Number(item.precio_venta_mn || 0) * qty;
+        costMN = Number(item.costo_unitario_usd || 0) * qty * exchangeRate;
+        revenueUSD = revenueMN / exchangeRate;
+        costUSD = costMN / exchangeRate;
+      }
+
+      med.totalCostUSD += costUSD;
+      med.totalCostMN += costMN;
+      med.totalRevenueUSD += revenueUSD;
+      med.totalRevenueMN += revenueMN;
+    }
 
     // Calcular profit y margin para cada medicamento
     const results = Array.from(medicineMap.values()).map(med => {
-      const profit = med.totalRevenue - med.totalCost;
-      const profitMargin = med.totalRevenue > 0 ? (profit / med.totalRevenue) * 100 : 0;
+      const profitUSD = med.totalRevenueUSD - med.totalCostUSD;
+      const profitMN = med.totalRevenueMN - med.totalCostMN;
+      const profitMargin = med.totalRevenueUSD > 0 ? (profitUSD / med.totalRevenueUSD) * 100 : 0;
       
       let status = 'medium';
       if (profitMargin < 0) status = 'negative';
       else if (profitMargin < 10) status = 'low';
       else if (profitMargin >= 30) status = 'high';
 
-      // Convertir a MN
-      const totalCostMN = med.totalCost * exchangeRate;
-      const totalRevenueMN = med.totalRevenue * exchangeRate;
-      const profitMN = profit * exchangeRate;
-
       return {
         medicineId: med.medicineId,
         medicineCode: med.medicineCode,
         medicineName: med.medicineName,
         quantitySold: med.quantitySold,
-        totalCost: Number(med.totalCost.toFixed(2)),
-        totalRevenue: Number(med.totalRevenue.toFixed(2)),
-        profit: Number(profit.toFixed(2)),
+        totalCost: Number(med.totalCostUSD.toFixed(2)),
+        totalRevenue: Number(med.totalRevenueUSD.toFixed(2)),
+        profit: Number(profitUSD.toFixed(2)),
         profitMargin: Number(profitMargin.toFixed(2)),
         status,
-        // Valores en MN
-        totalCostMN: Number(totalCostMN.toFixed(2)),
-        totalRevenueMN: Number(totalRevenueMN.toFixed(2)),
+        // Valores en MN (reales)
+        totalCostMN: Number(med.totalCostMN.toFixed(2)),
+        totalRevenueMN: Number(med.totalRevenueMN.toFixed(2)),
         profitMN: Number(profitMN.toFixed(2))
       };
     });
@@ -255,25 +292,32 @@ router.get('/by-customer', async (req, res) => {
           select: {
             qty: true,
             costo_unitario_usd: true,
-            precio_propuesto_usd: true
+            precio_propuesto_usd: true,
+            precio_venta_mn: true
           }
         }
       }
     });
+
+    // Obtener tasa de cambio
+    const exchangeRate = await getExchangeRate();
 
     // Agrupar por cliente
     const customerMap = new Map();
 
     for (const sale of sales) {
       const custId = sale.customerId;
+      const tipoVenta = sale.tipoVenta || 'USD';
       
       if (!customerMap.has(custId)) {
         customerMap.set(custId, {
           customerId: custId,
           customerName: sale.customer?.name || 'Desconocido',
           totalSales: 0,
-          totalCost: 0,
-          totalRevenue: 0
+          totalCostUSD: 0,
+          totalCostMN: 0,
+          totalRevenueUSD: 0,
+          totalRevenueMN: 0
         });
       }
 
@@ -281,39 +325,47 @@ router.get('/by-customer', async (req, res) => {
       cust.totalSales += 1;
 
       for (const item of sale.saleitem) {
-        const cost = Number(item.costo_unitario_usd || 0);
-        const price = Number(item.precio_propuesto_usd || 0);
         const qty = Number(item.qty || 0);
+        
+        let revenueUSD = 0, revenueMN = 0;
+        let costUSD = 0, costMN = 0;
+        
+        if (tipoVenta === 'USD') {
+          revenueUSD = Number(item.precio_propuesto_usd || 0) * qty;
+          costUSD = Number(item.costo_unitario_usd || 0) * qty;
+          revenueMN = revenueUSD * exchangeRate;
+          costMN = costUSD * exchangeRate;
+        } else if (tipoVenta === 'MN') {
+          revenueMN = Number(item.precio_venta_mn || 0) * qty;
+          costMN = Number(item.costo_unitario_usd || 0) * qty * exchangeRate;
+          revenueUSD = revenueMN / exchangeRate;
+          costUSD = costMN / exchangeRate;
+        }
 
-        cust.totalCost += cost * qty;
-        cust.totalRevenue += price * qty;
+        cust.totalCostUSD += costUSD;
+        cust.totalCostMN += costMN;
+        cust.totalRevenueUSD += revenueUSD;
+        cust.totalRevenueMN += revenueMN;
       }
     }
 
-    // Obtener tasa de cambio
-    const exchangeRate = await getExchangeRate();
-
     // Calcular profit y margin para cada cliente
     const results = Array.from(customerMap.values()).map(cust => {
-      const profit = cust.totalRevenue - cust.totalCost;
-      const profitMargin = cust.totalRevenue > 0 ? (profit / cust.totalRevenue) * 100 : 0;
-
-      // Convertir a MN
-      const totalCostMN = cust.totalCost * exchangeRate;
-      const totalRevenueMN = cust.totalRevenue * exchangeRate;
-      const profitMN = profit * exchangeRate;
+      const profitUSD = cust.totalRevenueUSD - cust.totalCostUSD;
+      const profitMN = cust.totalRevenueMN - cust.totalCostMN;
+      const profitMargin = cust.totalRevenueUSD > 0 ? (profitUSD / cust.totalRevenueUSD) * 100 : 0;
 
       return {
         customerId: cust.customerId,
         customerName: cust.customerName,
         totalSales: cust.totalSales,
-        totalCost: Number(cust.totalCost.toFixed(2)),
-        totalRevenue: Number(cust.totalRevenue.toFixed(2)),
-        profit: Number(profit.toFixed(2)),
+        totalCost: Number(cust.totalCostUSD.toFixed(2)),
+        totalRevenue: Number(cust.totalRevenueUSD.toFixed(2)),
+        profit: Number(profitUSD.toFixed(2)),
         profitMargin: Number(profitMargin.toFixed(2)),
-        // Valores en MN
-        totalCostMN: Number(totalCostMN.toFixed(2)),
-        totalRevenueMN: Number(totalRevenueMN.toFixed(2)),
+        // Valores en MN (reales)
+        totalCostMN: Number(cust.totalCostMN.toFixed(2)),
+        totalRevenueMN: Number(cust.totalRevenueMN.toFixed(2)),
         profitMN: Number(profitMN.toFixed(2))
       };
     });
@@ -366,58 +418,74 @@ router.get('/by-supplier', async (req, res) => {
         },
         sale: {
           select: {
-            date: true
+            date: true,
+            tipoVenta: true
           }
         }
       }
     });
+
+    // Obtener tasa de cambio
+    const exchangeRate = await getExchangeRate();
 
     // Agrupar por proveedor
     const supplierMap = new Map();
 
     for (const item of saleitems) {
       const suppId = item.supplierId;
-      const cost = Number(item.costo_unitario_usd || 0);
-      const price = Number(item.precio_propuesto_usd || 0);
       const qty = Number(item.qty || 0);
+      const tipoVenta = item.sale?.tipoVenta || 'USD';
 
       if (!supplierMap.has(suppId)) {
         supplierMap.set(suppId, {
           supplierId: suppId,
           supplierName: item.supplier?.name || 'Desconocido',
-          totalCost: 0,
-          totalRevenue: 0
+          totalCostUSD: 0,
+          totalCostMN: 0,
+          totalRevenueUSD: 0,
+          totalRevenueMN: 0
         });
       }
 
       const supp = supplierMap.get(suppId);
-      supp.totalCost += cost * qty;
-      supp.totalRevenue += price * qty;
-    }
+      
+      let revenueUSD = 0, revenueMN = 0;
+      let costUSD = 0, costMN = 0;
+      
+      if (tipoVenta === 'USD') {
+        revenueUSD = Number(item.precio_propuesto_usd || 0) * qty;
+        costUSD = Number(item.costo_unitario_usd || 0) * qty;
+        revenueMN = revenueUSD * exchangeRate;
+        costMN = costUSD * exchangeRate;
+      } else if (tipoVenta === 'MN') {
+        revenueMN = Number(item.precio_venta_mn || 0) * qty;
+        costMN = Number(item.costo_unitario_usd || 0) * qty * exchangeRate;
+        revenueUSD = revenueMN / exchangeRate;
+        costUSD = costMN / exchangeRate;
+      }
 
-    // Obtener tasa de cambio
-    const exchangeRate = await getExchangeRate();
+      supp.totalCostUSD += costUSD;
+      supp.totalCostMN += costMN;
+      supp.totalRevenueUSD += revenueUSD;
+      supp.totalRevenueMN += revenueMN;
+    }
 
     // Calcular profit y ROI para cada proveedor
     const results = Array.from(supplierMap.values()).map(supp => {
-      const profit = supp.totalRevenue - supp.totalCost;
-      const roi = supp.totalCost > 0 ? (profit / supp.totalCost) * 100 : 0;
-
-      // Convertir a MN
-      const totalCostMN = supp.totalCost * exchangeRate;
-      const totalRevenueMN = supp.totalRevenue * exchangeRate;
-      const profitMN = profit * exchangeRate;
+      const profitUSD = supp.totalRevenueUSD - supp.totalCostUSD;
+      const profitMN = supp.totalRevenueMN - supp.totalCostMN;
+      const roi = supp.totalCostUSD > 0 ? (profitUSD / supp.totalCostUSD) * 100 : 0;
 
       return {
         supplierId: supp.supplierId,
         supplierName: supp.supplierName,
-        totalCost: Number(supp.totalCost.toFixed(2)),
-        totalRevenue: Number(supp.totalRevenue.toFixed(2)),
-        profit: Number(profit.toFixed(2)),
+        totalCost: Number(supp.totalCostUSD.toFixed(2)),
+        totalRevenue: Number(supp.totalRevenueUSD.toFixed(2)),
+        profit: Number(profitUSD.toFixed(2)),
         roi: Number(roi.toFixed(2)),
-        // Valores en MN
-        totalCostMN: Number(totalCostMN.toFixed(2)),
-        totalRevenueMN: Number(totalRevenueMN.toFixed(2)),
+        // Valores en MN (reales)
+        totalCostMN: Number(supp.totalCostMN.toFixed(2)),
+        totalRevenueMN: Number(supp.totalRevenueMN.toFixed(2)),
         profitMN: Number(profitMN.toFixed(2))
       };
     });
