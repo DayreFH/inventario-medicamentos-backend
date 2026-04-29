@@ -1,8 +1,23 @@
 // backend/src/routes/medicines.js
 import { Router } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 
 const router = Router();
+
+/**
+ * Siguiente código numérico (solo filas cuyo codigo es dígitos).
+ * Si no hay ninguno, devuelve "1".
+ */
+async function computeNextCodigoNumerico() {
+  const rows = await prisma.$queryRaw(
+    Prisma.sql`SELECT COALESCE(MAX(CAST(codigo AS UNSIGNED)), 0) + 1 AS n FROM medicines WHERE codigo REGEXP '^[0-9]+$'`
+  );
+  const raw = rows?.[0]?.n;
+  const n = typeof raw === 'bigint' ? Number(raw) : Number(raw);
+  if (!Number.isFinite(n) || n < 1) return '1';
+  return String(n);
+}
 
 /** Normaliza el precio recibido desde el frontend */
 function normPrice(p) {
@@ -84,6 +99,19 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/medicines/next-codigo
+ * Siguiente código sugerido (máximo numérico existente + 1). Debe declararse antes de /:id.
+ */
+router.get('/next-codigo', async (_req, res) => {
+  try {
+    const codigo = await computeNextCodigoNumerico();
+    res.json({ codigo });
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo calcular el siguiente código', detail: e.message });
+  }
+});
+
+/**
  * GET /api/medicines/:id
  * Obtiene un medicamento por id con precios y parámetros
  */
@@ -133,20 +161,36 @@ router.post('/', async (req, res) => {
     pesoKg 
   } = req.body;
   
+  const explicitCodigo = String(codigo ?? '').trim();
+  const useAutoCodigo = !explicitCodigo;
+
+  const dataCreate = (codigoFinal) => ({
+    codigo: codigoFinal,
+    nombreComercial: String(nombreComercial ?? '').trim(),
+    nombreGenerico: String(nombreGenerico ?? '').trim(),
+    formaFarmaceutica: formaFarmaceutica ?? 'comprimidos',
+    concentracion: concentracion ?? 'mg',
+    presentacion: presentacion ?? 'blister',
+    fechaVencimiento: fechaVencimiento ? new Date(fechaVencimiento) : null,
+    pesoKg: normPrice(pesoKg),
+  });
+
   try {
-    const med = await prisma.Medicine.create({
-      data: {
-        codigo: String(codigo ?? '').trim(),
-        nombreComercial: String(nombreComercial ?? '').trim(),
-        nombreGenerico: String(nombreGenerico ?? '').trim(),
-        formaFarmaceutica: formaFarmaceutica ?? 'comprimidos',
-        concentracion: concentracion ?? 'mg',
-        presentacion: presentacion ?? 'blister',
-        fechaVencimiento: fechaVencimiento ? new Date(fechaVencimiento) : null,
-        pesoKg: normPrice(pesoKg),
-      },
-    });
-    res.status(201).json(med);
+    if (useAutoCodigo) {
+      for (let i = 0; i < 5; i++) {
+        const codigoFinal = await computeNextCodigoNumerico();
+        try {
+          const med = await prisma.Medicine.create({ data: dataCreate(codigoFinal) });
+          return res.status(201).json(med);
+        } catch (e) {
+          if (e?.code === 'P2002' && i < 4) continue;
+          throw e;
+        }
+      }
+    } else {
+      const med = await prisma.Medicine.create({ data: dataCreate(explicitCodigo) });
+      return res.status(201).json(med);
+    }
   } catch (e) {
     if (e?.code === 'P2002') {
       return res.status(409).json({

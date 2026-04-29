@@ -297,10 +297,11 @@ router.get('/search', authenticate, async (req, res) => {
     medicines.forEach((med) => {
       results.push({
         type: 'medicine',
+        id: med.id,
         icon: '💊',
         title: med.nombreComercial,
         subtitle: `Código: ${med.codigo} | Stock: ${med.stock}`,
-        path: '/medicines'
+        path: `/medicines?medicineId=${encodeURIComponent(String(med.id))}`
       });
     });
 

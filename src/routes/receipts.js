@@ -213,11 +213,45 @@ router.put('/:id', async (req, res) => {
 });
 
 /**
+ * Obtener detalle de una entrada (cabecera + items)
+ * GET /api/receipts/:id
+ */
+router.get('/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    return res.status(400).json({ error: 'ID inválido' });
+  }
+
+  try {
+    const receipt = await prisma.receipt.findUnique({
+      where: { id },
+      include: {
+        supplier: true,
+        receiptitem: {
+          orderBy: { id: 'asc' },
+          include: {
+            medicines: true
+          }
+        }
+      }
+    });
+
+    if (!receipt) {
+      return res.status(404).json({ error: 'Entrada no encontrada' });
+    }
+
+    return res.json(receipt);
+  } catch (e) {
+    return res.status(500).json({ error: 'No se pudo obtener la entrada', detail: e.message });
+  }
+});
+
+/**
  * Listar entradas con filtros (con paginación)
- * GET /api/receipts?page=1&limit=20&day=YYYY-MM-DD&supplierId=N&q=nombreMed
+ * GET /api/receipts?page=1&limit=20&day=YYYY-MM-DD&supplierId=N&q=nombreMed&medicineId=N
  */
 router.get('/', async (req, res) => {
-  const { day, week, month, from, to, supplierId, q } = req.query;
+  const { day, week, month, from, to, supplierId, q, medicineId } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
@@ -242,7 +276,10 @@ router.get('/', async (req, res) => {
 
   const whereClause = {
     ...where,
-    ...(q ? { receiptitem: { some: { medicine: { nombreComercial: { contains: String(q) } } } } } : {})
+    ...(q
+      ? { receiptitem: { some: { medicines: { nombreComercial: { contains: String(q) } } } } }
+      : {}),
+    ...(medicineId ? { receiptitem: { some: { medicineId: Number(medicineId) } } } : {})
   };
 
   try {
@@ -253,7 +290,7 @@ router.get('/', async (req, res) => {
         orderBy: { date: 'desc' },
         include: {
           supplier: true,
-          receiptitem: { include: { medicine: true } }
+          receiptitem: { include: { medicines: true } }
         },
         skip: skip,
         take: limit
